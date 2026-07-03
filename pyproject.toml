@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "cortex-protocol"
+name = "cortex-mcp"
 version = "0.0.1"
 description = "User-owned, cross-agent AI memory — open-source memory MCP server."
 readme = "README.md"

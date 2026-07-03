@@ -1,3 +1,11 @@
+> **⭐ CURRENT AUTHORITATIVE HEADLINE (2026-07-02): LongMemEval_S = 0.932** via the **A1 fix**
+> (`--answer-first` + `--max-output-tokens 8192`) on the full 500 questions, ~$0.008/q — see the
+> **"A1 FIX: AUTHORITATIVE HEADLINE 0.932"** section at the **end** of this file (backed by the
+> committed artifact `a1_af8k_full500/cortex-v0_s_results.json`). The **0.894** figures throughout
+> this file are **prior history**: the measured progression that led here (kept intact, not deleted).
+> Positioning: **#1 on accuracy-per-dollar; raw #2 on LongMemEval_S** (behind Mastra 0.949) — not raw
+> SOTA.
+
 # Checkpoint C — AUTHORITATIVE (fixed `gemini-3.5-flash` judge)
 
 **2026-06-28** · LongMemEval_S, n=40 seed 0 (shuffled) · reader `gemini-2.5-flash-lite` · judge `gemini-3.5-flash` (thinking disabled), votes=3.
@@ -61,6 +69,12 @@ cortex-v0 with `--fact-keys` vs without, `_S` n=40 seed 0, `gemini-3.5-flash` ju
 
 ## Competitor comparison — VERIFIED LEADERBOARD (deep research, 2026-06-29)
 Replaces earlier rough numbers. Verified via multi-source adversarial research (`bench/results/leaderboard_research.md` for full citations). **⚠️ NOT apples-to-apples: judge model differs by row; canonical judge is `gpt-4o-2024-08-06` (>97% human agreement).**
+
+> **⚠️ SNAPSHOT (2026-06-29) — SUPERSEDED.** The Cortex row below (0.866 / 0.840) predates the A1
+> fix. The current authoritative Cortex number is **0.932** (raw #2, behind only Mastra 0.949) — see
+> the **A1 FIX** section at the end of this file and the updated `leaderboard_research.md`. The
+> "scores higher / not SOTA vs Emergence & Supermemory" prose in this dated block reflects the
+> pre-A1 0.866 and is kept only as history.
 
 | System | LongMemEval_S | Reader | Judge | Notes |
 |---|---|---|---|---|
@@ -245,3 +259,53 @@ Tested `--reflect` (cheap flash-lite aux digests retrieved memories → dated TI
 **Reflection HURTS: −5.0 pts overall AND ~2× cost** (mean input 50k tokens/q). Every weak category got *worse* (multi-session −7.6, temporal −3.0, ss-pref −16.7). Why: with recall already ~1.0, a cheap (flash-lite) digest of 50 chunks introduces lossy/incorrect summaries that the strong reader sometimes trusts over the raw evidence, and the extra block distracts the preference reader. **Conclusion: the cheap pipeline is reader/evidence-bound at 0.894 — a cheap observational layer adds noise, not signal.** `--reflect` kept in the code (default OFF) but not used. To reach the leaders' 0.90+ would require a *premium* reader (kills the cost edge) or a much stronger (expensive) observer — a product-tier decision, not a cheap-pipeline win.
 
 **Remaining:** combined config (~0.88) after quota reset; a gpt-4o-judge pass (needs `OPENAI_API_KEY`) for literal literature parity; classifier refinement + multi-session decomposition for further gains.
+
+---
+
+## ⭐ FULL `_S` (500) — A1 FIX: AUTHORITATIVE HEADLINE 0.932 (2026-07-02)
+
+**This supersedes the 0.894 summary above and is the current authoritative LongMemEval_S headline.**
+Same pipeline as the 0.894 combined-best run (gemini-3.5-flash reader + top_k=50 + preference-mode ·
+gemini-3.5-flash judge votes=3 · embed cache · seed 0 · ALL 500 questions) **plus the A1 fix:
+`--answer-first` (emit ANSWER before NOTES) + `--max-output-tokens 8192`** — which removes the
+mid-NOTES truncation that had been costing the aggregation-heavy question types. Net effect on the
+full 500: **0.894 → 0.932 (+3.8 pt)**.
+
+**Backing artifact (committed):** [`a1_af8k_full500/cortex-v0_s_results.json`](a1_af8k_full500/cortex-v0_s_results.json)
+(+ `a1_af8k_full500/cortex-v0_s_hypotheses.jsonl`). Every number in the table below is read directly
+from that JSON — nothing here is estimated.
+
+| metric | value |
+|---|---|
+| **accuracy (n=500)** | **0.932** |
+| single-session-assistant (n=56) | 0.982 |
+| single-session-user (n=70) | 0.957 |
+| knowledge-update (n=78) | 0.949 |
+| temporal-reasoning (n=133) | 0.925 |
+| multi-session (n=133) | 0.902 |
+| single-session-preference (n=30) | 0.900 |
+| abstention (n=30) | 0.867 |
+| non-abstention (n=470) | 0.936 |
+| recall@k | 0.998 |
+| mean input tokens/q | ~25.7k |
+| reader $/q | **~$0.008** |
+
+**Progression (kept for the record):** 0.840 (2.5-flash + k50) → 0.848 (+preference) → 0.866
+(3.5-flash + k50) → **0.894** (3.5-flash + k50 + preference) → **0.932** (+ A1: answer-first + 8192
+output budget). The 0.894 row and all earlier checkpoints above are the documented history that led
+here; they are retained, not overwritten.
+
+**Why A1 lands here but not on LoCoMo:** LongMemEval_S contexts are large (~25.7k input tokens/q at
+k=50), so the previous `--max-output-tokens 2048` truncated the reader mid-NOTES before it reached the
+ANSWER on the aggregation-heavy types; answer-first + an 8192 budget removes both failure modes. On
+LoCoMo (small ~5–10k contexts) the same A1 fix was **neutral** (see
+[`LOCOMO_results.md`](LOCOMO_results.md)) — A1 pays where contexts are large. The LoCoMo headline
+(0.813) instead comes from retrieval depth (k=50 → 100).
+
+**Positioning (framing unchanged, number updated):** **#1 on accuracy-per-dollar.** Under our
+gemini-flash judge, 0.932 is **raw #2** on LongMemEval_S — behind only Mastra (0.949, gpt-5-mini) and
+above ByteRover (0.928 claimed), Hindsight (0.914), Emergence (0.860), Supermemory (0.852), Zep
+(0.712) — all of which use pricier readers. **Not raw SOTA.** Same-judge caveat still applies: our
+gemini-flash judge is likely more lenient than the canonical GPT-4o, so a GPT-4o re-grade (pending an
+`OPENAI_API_KEY`) may lower the raw number; the accuracy-per-dollar claim (a cheap reader at
+~$0.008/q) does not depend on the judge.

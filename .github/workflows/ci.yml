@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Least privilege by default.
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # let gitleaks annotate a human PR with any findings
+    steps:
+      # Actions are pinned to full commit SHAs (not moving tags) so a tag-repoint
+      # supply-chain attack (cf. tj-actions CVE-2025-30066) can't inject code.
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0 # full history so the secret scan covers all commits
+
+      - name: Secret scan (gitleaks)
+        # Skip on Dependabot PRs: they run with a read-only token (gitleaks' PR API
+        # calls fail as "Resource not accessible by integration") and only bump pinned
+        # versions. Still gates every push to main and every human PR.
+        if: github.actor != 'dependabot[bot]'
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          enable-cache: true
+
+      # ruff, mypy, and pytest are declared in the `dev` optional-dependency group
+      # (pyproject.toml), so every check runs against the locked toolchain via `--extra dev`.
+      - name: Lint (ruff)
+        run: uv run --extra dev ruff check .
+
+      - name: Format check (ruff)
+        run: uv run --extra dev ruff format --check .
+
+      - name: Type-check (mypy)
+        run: uv run --extra dev mypy server/cortex bench/cortex_bench --config-file pyproject.toml
+
+      # Offline, deterministic suite (FakeProvider — no live LLM calls). pythonpath
+      # (server, bench) + testpaths are set in pyproject; fastmcp is a runtime dependency
+      # so the MCP-server tests run rather than skip.
+      - name: Tests (pytest)
+        run: uv run --extra dev pytest
+
+      - name: Lockfile up to date
+        run: uv lock --check
+
+      - name: Dependency vulnerability audit
+        run: uvx pip-audit --progress-spinner off -r <(uv export --no-emit-project --format requirements-txt)
+        continue-on-error: true # surfaces transitive CVEs without hard-blocking the build

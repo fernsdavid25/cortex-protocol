@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/schemas/mcpb-manifest-v0.4.schema.json",
   "manifest_version": "0.4",
-  "name": "cortex-protocol",
+  "name": "cortex-mcp",
   "display_name": "Cortex Memory",
   "version": "0.0.1",
   "description": "User-owned, cross-agent memory for AI agents — local, BYOK, nothing phones home.",
@@ -25,6 +25,8 @@
   "tools": [
     { "name": "memorize", "description": "Save a durable memory (fact, preference, decision)." },
     { "name": "recall", "description": "Retrieve the memories most relevant to a query." },
+    { "name": "recall_about", "description": "Exhaustive dossier for one entity (requires CORTEX_GRAPH=1)." },
+    { "name": "recall_timeline", "description": "Dated event timeline for a topic (requires CORTEX_EPISODIC=1)." },
     { "name": "list_memories", "description": "List the most recently saved memories." },
     { "name": "forget", "description": "Delete a memory by id." }
   ],

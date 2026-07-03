@@ -55,20 +55,26 @@ Reproducible LongMemEval evaluation for Cortex. **Phase 0 verified facts below a
 All four Phase-0 unknowns resolved from primary sources (counts verified by direct dataset count; judge verified from source; dataset path verified by successful download; V1-vs-V2 resolved). **No blockers. Proceeding to Phase 1.**
 
 ## Datasets supported + how to run
-- **LongMemEval** (S / M / oracle) — auto-downloaded to `bench/data/`:
+- **LongMemEval** (S / M / oracle) — auto-downloaded to `bench/data/`. The 0.932 headline config
+  (drop `--limit` / raise it to 500 for the full run):
   ```
   python -m cortex_bench.run --system cortex-v0 --variant s --limit 100 \
-    --reader-model gemini-3.5-flash --top-k 50 --preference-mode --judge gemini --judge-votes 3
+    --reader-model gemini-3.5-flash --top-k 50 --preference-mode --answer-first \
+    --max-output-tokens 8192 --judge gemini --judge-votes 3
   ```
 - **LoCoMo** (multi-hop / temporal / open-domain / single-hop / adversarial) — put `locomo10.json`
-  in `bench/data/` (from [snap-research/locomo](https://github.com/snap-research/locomo)), then:
+  in `bench/data/` (from [snap-research/locomo](https://github.com/snap-research/locomo)), then run
+  the 0.813 headline config:
   ```
-  python -m cortex_bench.run --system cortex-v0 --locomo --reader-model gemini-2.5-flash --top-k 50 --judge gemini
+  python -m cortex_bench.run --system cortex-v0 --locomo --reader-model gemini-2.5-flash \
+    --top-k 100 --answer-first --max-output-tokens 8192 --judge gemini
   ```
   Categories map to `locomo-*` question types; adversarial → abstention. See `cortex_bench/locomo.py`.
 
 Per-role models are env-configurable (`CORTEX_READER_MODEL`, `CORTEX_JUDGE_MODEL`, …; see `../.env.example`).
 
 ## Current results
-- **LongMemEval_S headline + methodology:** [`results/PHASE3_authoritative.md`](results/PHASE3_authoritative.md) — **0.894** (gemini-3.5-flash + top_k=50 + preference-mode, ~$0.008/q; Gemini judge).
+- **LongMemEval_S headline + methodology:** [`results/PHASE3_authoritative.md`](results/PHASE3_authoritative.md) — **0.932** (gemini-3.5-flash + top_k=50 + preference-mode + the A1 fix `--answer-first --max-output-tokens 8192`, ~$0.008/q; Gemini judge). Backing artifact: [`results/a1_af8k_full500/cortex-v0_s_results.json`](results/a1_af8k_full500/cortex-v0_s_results.json).
+- **LoCoMo headline + methodology:** [`results/LOCOMO_results.md`](results/LOCOMO_results.md) — **0.813** (gemini-2.5-flash + top_k=100 + answer-first, ~$0.0034/q; Gemini judge). Backing artifact: [`results/locomo_k100_full/cortex-v0_locomo_results.json`](results/locomo_k100_full/cortex-v0_locomo_results.json).
+- **Positioning:** **#1 on accuracy-per-dollar** — raw #2 on LongMemEval (behind Mastra 0.949), raw #3 on LoCoMo; **not raw SOTA**. Same-judge caveat: our Gemini judge is likely more lenient than the canonical GPT-4o (a GPT-4o re-grade is pending an `OPENAI_API_KEY`).
 - **Verified competitor leaderboard + deep-research verdict:** [`results/leaderboard_research.md`](results/leaderboard_research.md).

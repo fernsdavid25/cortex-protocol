@@ -95,8 +95,8 @@ verified competitor leaderboard: [`bench/results/leaderboard_research.md`](bench
 |---|---|---|
 | **Hybrid retrieval** | Dense (Gemini embeddings) + Okapi BM25, fused with Reciprocal Rank Fusion; deep top-k drives recall@k ≈ 1.0. | **On** (all paths) |
 | **Chain-of-Note reader** | The reader takes structured notes over the retrieved memories before answering, with **calibrated abstention** — it declines when no memory supports an answer instead of hallucinating. | **On** (benchmark path) |
-| **Episodic memory (L4)** | One cheap `gemini-2.5-flash-lite` call per `memorize` structures event_time / actor / location. **Write-time cost only — recall is byte-identical**, so the accuracy-per-dollar guarantee holds. | Engine-level, opt-in |
-| **Entity graph + `recall_about`** | At `memorize` time, entities and relationships are folded into the **same** cheap extraction call that does episodic. Builds an ego knowledge graph rooted at a synthetic `self` entity — typed nodes (person / place / org / project / thing) joined by labeled, directed relationships, each memory attached to the entity it's about — powering the `recall_about` tool. **Write-time cost only — recall stays byte-identical.** | Engine-level, opt-in |
+| **Episodic memory (L4) + `recall_timeline`** | One cheap `gemini-2.5-flash-lite` call per `memorize` structures event_time / actor / location, powering the `recall_timeline` tool. **Write-time cost only — recall is byte-identical**, so the accuracy-per-dollar guarantee holds. | Opt-in (`CORTEX_EPISODIC=1`) |
+| **Entity graph + `recall_about`** | At `memorize` time, entities and relationships are folded into the **same** cheap extraction call that does episodic. Builds an ego knowledge graph rooted at a synthetic `self` entity — typed nodes (person / place / org / project / thing) joined by labeled, directed relationships, each memory attached to the entity it's about — powering the `recall_about` tool. **Write-time cost only — recall stays byte-identical.** | Opt-in (`CORTEX_GRAPH=1`) |
 | **Anti-saturation (L5)** | Write-time **dedup** (embedding-only, no LLM) bounds store growth; **contradiction soft-update** (one cheap arbiter call) supersedes stale facts so recall returns only the latest value. Saturation harness (2000-write synthetic stream): **41.8% duplicate rows dropped, 100% latest-value retrieval**. | Engine-level, opt-in |
 
 See [`docs/L6_Decades_Scale.md`](docs/L6_Decades_Scale.md) for the decades-scale retrieval analysis
@@ -130,25 +130,34 @@ local SQLite file (`~/.cortex/memory.db`), **nothing phones home**.
 | **Claude Desktop** | `claude_desktop_config.json` (Settings → Developer → Edit Config) |
 | **VS Code** | `.vscode/mcp.json` |
 
-Restart the client. That exposes five tools:
+Restart the client. That exposes six tools (the last two are gated on opt-in memory layers — see
+**Config (env)** below):
 
 | Tool | What it does |
 |---|---|
 | `memorize(content, kind?, tags?)` | Save a durable memory (optionally classified into one of six kinds). |
 | `recall(query, limit?)` | Retrieve the most relevant memories (hybrid dense + BM25, RRF; no LLM generation). |
-| `recall_about(entity, limit?)` | Exhaustive dossier for one entity — a person, place, project, org, thing, or yourself — every relationship plus every memory attached to it. A pure keyed read, no LLM/embedding call. |
 | `list_memories(limit?)` | List the most recent memories. |
 | `forget(memory_id)` | Delete a memory (a short id prefix works if unambiguous). |
+| `recall_about(entity, limit?)` | Exhaustive dossier for one entity — a person, place, project, org, thing, or yourself — every relationship plus every memory attached to it. A pure keyed read, no LLM/embedding call. **Requires `CORTEX_GRAPH=1`.** |
+| `recall_timeline(query?, limit?)` | Dated event timeline — memories ordered by their extracted `event_time` (for "what happened when" questions). A pure keyed read, no LLM/embedding call. **Requires `CORTEX_EPISODIC=1`.** |
 
 **From a checkout** (before the package is on PyPI): `python -m cortex.mcp.server`, or in the client
 config use `"command": "uv", "args": ["run", "--with", "fastmcp", "python", "-m", "cortex.mcp.server"]`.
 
 **Config (env):** `GEMINI_API_KEY` / `GOOGLE_API_KEY` (required); optional `CORTEX_DB_PATH`,
 `CORTEX_USER_ID`, `CORTEX_EMBED_MODEL`, `CORTEX_EMBED_DIM`, `CORTEX_TOP_K` (default recall depth 5).
-See [`examples/`](examples/) and [`.env.example`](.env.example).
+
+**Opt-in memory layers (off by default).** `CORTEX_GRAPH=1` builds the entity graph and enables
+`recall_about`; `CORTEX_EPISODIC=1` structures event time / actor / location and enables
+`recall_timeline`; `CORTEX_EXTRACT_MODEL` (default `gemini-2.5-flash-lite`) is the model that does
+that extraction. Enabling either adds **one cheap flash-lite call per `memorize`** (write-time only,
+on your own key — when both are on they share a single extraction call). **`recall` stays
+byte-identical**, so the accuracy-per-dollar guarantee is unchanged. See [`examples/`](examples/) and
+[`.env.example`](.env.example).
 
 **Claude Desktop one-click:** build the `.mcpb` bundle and drag it onto Desktop — it prompts for your
-Gemini key and runs the same five tools. See [`packaging/mcpb/`](packaging/mcpb/).
+Gemini key and runs the same six tools. See [`packaging/mcpb/`](packaging/mcpb/).
 
 ## Security & privacy
 

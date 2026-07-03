@@ -2,8 +2,9 @@
 
 How Cortex recall scales from a personal SQLite store (thousands of memories) to a
 decades-long, multi-user hosted store (10^5–10^7+ memories). This is a design + measurement
-note; it changes no engine behaviour. Two harnesses back it: `bench/scale/latency_harness.py`
-(offline, the SQLite ceiling) and `bench/scale/pgvector_latency.py` (Cloud SQL, the HNSW path).
+note; it changes no engine behaviour. Two harnesses accompany it: `bench/scale/latency_harness.py`
+(offline — the SQLite ceiling, measured below) and `bench/scale/pgvector_latency.py` (the
+ready-to-run Cloud SQL HNSW harness — operator-gated, see §5).
 
 ## 1. The ceiling of the current in-memory path
 
@@ -38,13 +39,17 @@ roughly linearly with N (a 50× store is ~80× slower). This is fine at personal
 
 ## 2. The pgvector HNSW path (O(log n))
 
-`PostgresStore` (`server/cortex/store/pg_store.py`) fixes this by pushing retrieval **into** the
-database. It builds `CREATE INDEX idx_memories_hnsw ON memories USING hnsw (embedding
-vector_cosine_ops)`, and `search()` issues dense `ORDER BY embedding <=> %s::vector LIMIT pool`
-(HNSW-indexed) plus lexical FTS (`GIN(content_tsv)`, `ts_rank_cd`), fused by the **same** RRF(k=60).
-Only a small candidate pool crosses the wire — the full store is never loaded. HNSW is a navigable
-small-world graph, so a search visits ~**O(log n)** nodes instead of all n; latency stays roughly
-flat as n grows (harness #2 confirms this at 100k/1M).
+The fix is to push retrieval **into** the database with pgvector's HNSW index — the store used by
+the **hosted production deployment** and the documented scale-out for self-host (Goal.md I8; this
+OSS slice currently ships the SQLite path above, and porting the pgvector store to self-host is on
+the roadmap). That `PostgresStore` builds `CREATE INDEX idx_memories_hnsw ON memories USING hnsw
+(embedding vector_cosine_ops)`, and `search()` issues dense `ORDER BY embedding <=> %s::vector LIMIT
+pool` (HNSW-indexed) plus lexical FTS (`GIN(content_tsv)`, `ts_rank_cd`), fused by the **same**
+RRF(k=60). Only a small candidate pool crosses the wire — the full store is never loaded. HNSW is a
+navigable small-world graph, so a search visits ~**O(log n)** nodes instead of all n, which is why
+latency is expected to stay roughly flat as n grows. Harness #2 (`bench/scale/pgvector_latency.py`)
+measures exactly this at 100k/1M against a live Cloud SQL instance — an **operator-gated** run (see
+§5), not yet executed here, so the flat-latency figure is HNSW's designed behaviour pending that run.
 
 **Recommended HNSW parameters** (starting points):
 
