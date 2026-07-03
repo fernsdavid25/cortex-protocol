@@ -1,0 +1,59 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/schemas/mcpb-manifest-v0.4.schema.json",
+  "manifest_version": "0.4",
+  "name": "cortex-protocol",
+  "display_name": "Cortex Memory",
+  "version": "0.0.1",
+  "description": "User-owned, cross-agent memory for AI agents — local, BYOK, nothing phones home.",
+  "long_description": "Cortex gives your agent persistent, cross-session memory. Save durable facts/preferences with `memorize`, retrieve them with `recall` (hybrid dense + BM25 retrieval). Memories live in a local SQLite file; embeddings use your own Gemini key (BYOK). Open-source (Apache-2.0).",
+  "author": { "name": "David Fernandes" },
+  "license": "Apache-2.0",
+  "keywords": ["memory", "mcp", "ai", "agents", "rag"],
+  "server": {
+    "type": "python",
+    "entry_point": "cortex.mcp.server",
+    "mcp_config": {
+      "command": "uvx",
+      "args": ["cortex-mcp"],
+      "env": {
+        "GEMINI_API_KEY": "${user_config.gemini_api_key}",
+        "CORTEX_DB_PATH": "${user_config.db_path}",
+        "CORTEX_USER_ID": "${user_config.user_id}"
+      }
+    }
+  },
+  "tools": [
+    { "name": "memorize", "description": "Save a durable memory (fact, preference, decision)." },
+    { "name": "recall", "description": "Retrieve the memories most relevant to a query." },
+    { "name": "list_memories", "description": "List the most recently saved memories." },
+    { "name": "forget", "description": "Delete a memory by id." }
+  ],
+  "user_config": {
+    "gemini_api_key": {
+      "type": "string",
+      "title": "Gemini API key",
+      "description": "Your own Google Gemini API key (BYOK). Get one at https://aistudio.google.com/apikey",
+      "sensitive": true,
+      "required": true
+    },
+    "db_path": {
+      "type": "string",
+      "title": "Memory database path",
+      "description": "Where memories are stored (a local SQLite file).",
+      "default": "${HOME}/.cortex/memory.db",
+      "required": false
+    },
+    "user_id": {
+      "type": "string",
+      "title": "Memory namespace",
+      "description": "Namespace within the database (lets one machine hold separate memory sets).",
+      "default": "local",
+      "required": false
+    }
+  },
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": { "python": ">=3.11" }
+  }
+}
