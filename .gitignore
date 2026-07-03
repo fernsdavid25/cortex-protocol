@@ -1,0 +1,56 @@
+# ============================================================
+# SECRETS / CREDENTIALS — NEVER COMMIT
+# ============================================================
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+service-account*.json
+**/service-account*.json
+gcp-*.json
+credentials*.json
+*-credentials.json
+secrets/
+*.secret
+
+# ============================================================
+# Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.ipynb_checkpoints/
+
+# ============================================================
+# Data / models / local artifacts (keep bench/results/ committed as proof)
+# ============================================================
+bench/data/
+bench/.cache/
+data/
+*.bin
+*.sqlite
+*.db
+generation_logs/
+retrieval_logs/
+
+# ============================================================
+# OS / editor
+# ============================================================
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
