@@ -1,0 +1,47 @@
+{
+  "n": 500,
+  "accuracy": 0.932,
+  "per_type": {
+    "knowledge-update": {
+      "acc": 0.9487,
+      "n": 78
+    },
+    "multi-session": {
+      "acc": 0.9023,
+      "n": 133
+    },
+    "single-session-assistant": {
+      "acc": 0.9821,
+      "n": 56
+    },
+    "single-session-preference": {
+      "acc": 0.9,
+      "n": 30
+    },
+    "single-session-user": {
+      "acc": 0.9571,
+      "n": 70
+    },
+    "temporal-reasoning": {
+      "acc": 0.9248,
+      "n": 133
+    }
+  },
+  "abstention": {
+    "acc": 0.8667,
+    "n": 30
+  },
+  "non_abstention": {
+    "acc": 0.9362,
+    "n": 470
+  },
+  "mean_input_tokens": 25723.5,
+  "mean_output_tokens": 113.5,
+  "mean_embed_tokens": 0.0,
+  "latency_ms_p50": 5533.1,
+  "latency_ms_p95": 12835.3,
+  "recall_at_k": 0.9977,
+  "measured_n": 346,
+  "usd_per_question_reader": 0.008001,
+  "usd_per_question": 0.008001
+}

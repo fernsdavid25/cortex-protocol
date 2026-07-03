@@ -1,0 +1,43 @@
+{
+  "n": 1986,
+  "accuracy": 0.8132,
+  "per_type": {
+    "locomo-adversarial": {
+      "acc": 0.8363,
+      "n": 446
+    },
+    "locomo-multihop": {
+      "acc": 0.695,
+      "n": 282
+    },
+    "locomo-opendomain": {
+      "acc": 0.4583,
+      "n": 96
+    },
+    "locomo-singlehop": {
+      "acc": 0.8644,
+      "n": 841
+    },
+    "locomo-temporal": {
+      "acc": 0.8567,
+      "n": 321
+    }
+  },
+  "abstention": {
+    "acc": 0.8363,
+    "n": 446
+  },
+  "non_abstention": {
+    "acc": 0.8065,
+    "n": 1540
+  },
+  "mean_input_tokens": 10468.4,
+  "mean_output_tokens": 92.9,
+  "mean_embed_tokens": 0.0,
+  "latency_ms_p50": 3220.8,
+  "latency_ms_p95": 11264.4,
+  "recall_at_k": 0.9982,
+  "measured_n": 1486,
+  "usd_per_question_reader": 0.003373,
+  "usd_per_question": 0.003373
+}
