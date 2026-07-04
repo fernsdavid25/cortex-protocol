@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & discussion
+    url: https://github.com/fernsdavid25/cortex-protocol/discussions
+    about: Ask questions, share ideas, or discuss usage in GitHub Discussions.
+  - name: Report a security vulnerability
+    url: https://github.com/fernsdavid25/cortex-protocol/security/advisories/new
+    about: Please disclose vulnerabilities privately — do not open a public issue.

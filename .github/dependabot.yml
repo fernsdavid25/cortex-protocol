@@ -1,0 +1,32 @@
+# Dependabot keeps dependencies and pinned CI actions current.
+# Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates
+version: 2
+updates:
+  # Python dependencies (pyproject.toml / uv.lock).
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
+
+  # GitHub Actions — bumps the full-SHA pins in .github/workflows/* as new
+  # releases land, so the supply-chain-safe pins stay on current versions.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      github-actions:
+        patterns:
+          - "*"

@@ -1,0 +1,7 @@
+# Funding options shown on the repository "Sponsor" button.
+# Docs: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+github: [fernsdavid25]
+# Other platforms are available if ever needed (uncomment and fill in):
+# open_collective: # Open Collective slug
+# ko_fi: # Ko-fi username
+# custom: # e.g. ["https://example.com/donate"]

@@ -2,12 +2,13 @@
 
 ## Supported versions
 
-Cortex is pre-`1.0` (currently `0.0.x`). Only the **latest commit on `main`** (and the most recent
-release) is supported with security fixes. Storage format and APIs may change before `0.1.0`.
+Cortex is pre-`1.0`. Security fixes land on the **latest release line** (the most recent published
+release and the current `main`); older tags/commits are not patched. Storage format and APIs may
+still change before `1.0`, so track the latest release.
 
 | Version | Supported |
 |---|---|
-| latest `main` / latest release | ✅ |
+| latest release line (`main` + latest release) | ✅ |
 | any older tag/commit | ❌ |
 
 ## Reporting a vulnerability
@@ -42,6 +43,23 @@ Cortex is a **local, bring-your-own-key** memory server. What that means for you
   limits are clamped, short-id deletion refuses ambiguous matches); embeddings are validated
   (non-empty, correct dimension) before storage; CI runs a gitleaks secret scan and a dependency
   audit on every push and PR.
+
+### Stored input / memory poisoning
+
+Recalled memory content is **untrusted data, not instructions.** Anything Cortex returns from a
+`recall`/`recall_about`/`recall_timeline` (or the episodic/graph layers) is text that was written at
+some earlier point — potentially by a different agent, a shared or multi-tenant memory, or an
+imported/transferred memory file. A hostile writer can plant text crafted to read as an instruction
+("ignore your previous rules and…", a fake tool call, an exfiltration prompt) so that it fires later
+when some other agent recalls it. The **transfer/import path** (moving or merging a `memory.db` or an
+exported memory bundle between users or agents) is the primary poisoning vector, because it lets
+content authored under one trust boundary surface inside another.
+
+Cortex stores and retrieves this text faithfully; it does **not** and cannot sanitize meaning. The
+**consuming agent is responsible** for treating recalled memories as quoted, untrusted data — never
+concatenating them into a system/instruction context, never auto-executing tool calls or links they
+contain, and applying the same prompt-injection defenses it would to any third-party document. Only
+import or transfer memory from sources you trust.
 
 ## Scope
 

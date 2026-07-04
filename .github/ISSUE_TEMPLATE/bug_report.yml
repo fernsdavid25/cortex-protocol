@@ -1,0 +1,82 @@
+name: Bug report
+description: Report a reproducible problem in Cortex Protocol.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please search
+        [existing issues](https://github.com/fernsdavid25/cortex-protocol/issues) first —
+        if one already covers this, add to it instead of opening a duplicate.
+
+        **Do not report security vulnerabilities here** — follow
+        [SECURITY.md](https://github.com/fernsdavid25/cortex-protocol/blob/main/SECURITY.md) instead.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A clear, one- or two-sentence description of the bug.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Cortex version / commit
+      description: "Output of `uv pip show cortex-protocol` (version) or the `main` commit SHA you are on."
+      placeholder: "0.0.5  (or main @ abc1234)"
+    validations:
+      required: true
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: Install method
+      description: How are you running Cortex?
+      options:
+        - "uvx --from cortex-protocol cortex-mcp"
+        - "pip / uv install from PyPI"
+        - "From source (cloned repo)"
+        - "Other (describe below)"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal, ordered steps. Include the exact command(s) and any relevant config/env (redact secrets).
+      placeholder: |
+        1. Run `uvx --from cortex-protocol cortex-mcp`
+        2. Call the `memorize` tool with '...'
+        3. Call `recall` with '...'
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: What actually happened.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / traceback
+      description: Relevant output or stack trace. This is automatically formatted as code, so no backticks needed.
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Python version, and anything else relevant (e.g. `CORTEX_*` env flags in use — redact keys).
+      placeholder: "macOS 14.5, Python 3.11.9, CORTEX_EPISODIC=1"
+    validations:
+      required: false
