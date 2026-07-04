@@ -27,6 +27,5 @@ jobs:
       - name: Build sdist + wheel
         run: uv build
       - name: Publish to PyPI (Trusted Publishing, no token)
-        # Uploads dist/* via OIDC. Pinned to the maintained release/v1 branch;
-        # swap for a commit SHA if you want strict pin parity with ci.yml.
-        uses: pypa/gh-action-pypi-publish@release/v1
+        # Uploads dist/* via OIDC. SHA-pinned for strict supply-chain parity with ci.yml.
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1 / release-v1
