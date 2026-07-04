@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any, TypeVar
 
 from .base import EmbedResult, GenResult, LLMProvider
@@ -75,12 +75,16 @@ class GeminiProvider(LLMProvider):
         self.reader_model = reader_model
         self.embed_model = embed_model
         self.embed_dim = embed_dim
-        self._api_key = api_key or os.environ.get("GOOGLE_API_KEY")
+        # BYOK key resolution mirrors the MCP server: an explicit arg wins, then GEMINI_API_KEY,
+        # then GOOGLE_API_KEY — so either documented env var works consistently.
+        self._api_key = (
+            api_key or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        )
         # Lazily built in _client_obj(); Any so mypy allows the genai.Client assignment without a
         # module-level SDK import (the SDK is intentionally imported inside methods only).
         self._client: Any = None
 
-    def _client_obj(self):
+    def _client_obj(self) -> Any:
         if self._client is None:
             from google import genai
             from google.genai import types
@@ -98,7 +102,7 @@ class GeminiProvider(LLMProvider):
     ) -> GenResult:
         from google.genai import types
 
-        def _call():
+        def _call() -> Any:
             return self._client_obj().models.generate_content(
                 model=self.reader_model,
                 contents=prompt,
@@ -115,17 +119,17 @@ class GeminiProvider(LLMProvider):
             output_tokens=getattr(um, "candidates_token_count", 0) or 0,
         )
 
-    def embed(self, texts: list[str], *, batch_size: int = 100) -> EmbedResult:
+    def embed(self, texts: Sequence[str], *, batch_size: int = 100) -> EmbedResult:
         from google.genai import types
 
         vectors: list[list[float]] = []
         for start in range(0, len(texts), batch_size):
             batch = texts[start : start + batch_size]
 
-            def _call(b: list[str] = batch):
+            def _call(b: Sequence[str] = batch) -> Any:
                 return self._client_obj().models.embed_content(
                     model=self.embed_model,
-                    contents=b,
+                    contents=list(b),
                     config=types.EmbedContentConfig(output_dimensionality=self.embed_dim),
                 )
 

@@ -41,6 +41,7 @@ from __future__ import annotations
 import os
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any, cast
 
 from fastmcp import FastMCP
 
@@ -66,7 +67,8 @@ _ABOUT_DESC = (
     "user themselves. Use for 'tell me everything about X', 'what do you know about my ⟨…⟩', or "
     "'who is X'. Returns the entity, its labeled relationships (both directions), and every memory "
     "about it — the full enumeration that ranked `recall` can't give. For a single fact or fuzzy "
-    "lookup use `recall` instead."
+    "lookup use `recall` instead. Requires write-time graph extraction (set CORTEX_GRAPH=1); with "
+    "it off no entities are built and this returns an entity-graph-disabled notice."
 )
 
 # Sharp routing description mirroring the hosted server: the time-scoped question `recall` (ranked
@@ -92,15 +94,23 @@ mcp: FastMCP = FastMCP(
 _ENGINE: CortexMemory | None = None
 
 
-def _env_int(name: str, default: int) -> int:
-    """Read an int env var, with a clear error on a malformed value (vs an opaque ValueError)."""
+def _env_int(name: str, default: int, *, minimum: int = 1) -> int:
+    """Read an int env var, with a clear error on a malformed OR out-of-range value.
+
+    ``minimum`` (default 1) guards the sizing knobs — CORTEX_EMBED_DIM / CORTEX_TOP_K — so a 0 or
+    negative value raises the SAME clear RuntimeError here instead of failing opaquely deep in the
+    embed/recall path (a 0-dim embedder or a top_k<=0 that silently returns nothing).
+    """
     raw = os.environ.get(name)
     if raw is None or raw == "":
         return default
     try:
-        return int(raw)
+        value = int(raw)
     except ValueError:
         raise RuntimeError(f"{name} must be an integer, got {raw!r}.") from None
+    if value < minimum:
+        raise RuntimeError(f"{name} must be >= {minimum}, got {value}.")
+    return value
 
 
 def _env_flag(name: str) -> bool:
@@ -268,14 +278,20 @@ _MAX_LIMIT = 1000
 
 
 @mcp.tool()
-def recall(query: str, limit: int = 5) -> str:
+def recall(query: str, limit: int | None = None) -> str:
     """Retrieve the memories most relevant to a query.
 
     Call this at the start of a task (or whenever you need prior context) to load what the
     user has saved before. Returns ranked raw memories; synthesise your answer from them.
+
+    Omit `limit` to use the server's configured recall depth (CORTEX_TOP_K); pass an explicit
+    `limit` to override it for this call (clamped to a safe upper bound).
     """
-    limit = max(1, min(limit, _MAX_LIMIT))
-    memories = _engine().recall(query, limit=limit)
+    engine = _engine()
+    if limit is None:
+        memories = engine.recall(query)  # engine falls back to its configured top_k (CORTEX_TOP_K)
+    else:
+        memories = engine.recall(query, limit=max(1, min(limit, _MAX_LIMIT)))
     return _format_memories(memories)
 
 
@@ -283,8 +299,23 @@ def recall(query: str, limit: int = 5) -> str:
 def recall_about(entity: str, limit: int = 20) -> str:
     engine = _engine()
     limit = max(1, min(limit, _MAX_LIMIT))
-    cands = engine.store.get_entity_by_name(engine.user_id, entity)
+    # Entity-graph reads are an OPTIONAL store capability; the core MemoryStore Protocol doesn't
+    # declare them, so reach them through a cast when the store supports them.
+    if not hasattr(engine.store, "get_entity_by_name"):
+        return (
+            "Entity graph is disabled — set CORTEX_GRAPH=1 to enable dossiers. "
+            f'Meanwhile, try recall("{entity}") for a semantic search.'
+        )
+    store = cast(Any, engine.store)
+    cands = store.get_entity_by_name(engine.user_id, entity)
     if not cands:
+        # Nothing resolved. If the graph layer is off (the common self-host default) nothing is ever
+        # built, so name the flag; otherwise the entity is genuinely unknown yet.
+        if not getattr(engine, "use_graph", False):
+            return (
+                "Entity graph is disabled — set CORTEX_GRAPH=1 to enable dossiers. "
+                f'Meanwhile, try recall("{entity}") for a semantic search.'
+            )
         return (
             f'No entity named "{entity}" is in memory yet. '
             f'Try recall("{entity}") for a semantic search instead.'
@@ -294,7 +325,7 @@ def recall_about(entity: str, limit: int = 20) -> str:
     if len(cands) > 1:
         others = ", ".join(str(c["name"]) for c in cands[1:])
         note = f'Several matches for "{entity}"; showing {best["name"]}. Did you mean: {others}?'
-    dossier = engine.store.get_entity_dossier(engine.user_id, str(best["id"]))
+    dossier = store.get_entity_dossier(engine.user_id, str(best["id"]))
     return _format_dossier(dossier, note, limit)
 
 
