@@ -36,9 +36,9 @@ jobs:
     steps:
       # Third-party actions are pinned to full commit SHAs (matching ci.yml) so a tag-repoint
       # supply-chain attack (cf. tj-actions CVE-2025-30066) can't inject code.
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
         with:
           enable-cache: true
 
@@ -50,10 +50,10 @@ jobs:
       # First-party GitHub Pages actions — kept on their latest major v-tags (published and
       # maintained by GitHub) rather than SHA-pinned.
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3 # GitHub-official; artifact defaults to ./_site
+        uses: actions/upload-pages-artifact@v5 # GitHub-official; artifact defaults to ./_site
         with:
           path: site # mkdocs builds into ./site
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4 # GitHub-official Pages deploy
+        uses: actions/deploy-pages@v5 # GitHub-official Pages deploy
