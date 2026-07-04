@@ -1,0 +1,32 @@
+name: Publish to PyPI
+
+# Trusted Publishing (OIDC) — NO API token needed. PyPI trusts a short-lived OIDC token
+# minted by this exact workflow, so there is no long-lived secret to leak or rotate.
+# Fires when a GitHub Release is published (or run manually). Bump `version` in pyproject.toml
+# (PyPI refuses to overwrite an existing version), then cut a Release to publish.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Build & publish to PyPI
+    runs-on: ubuntu-latest
+    # Must match the GitHub environment name AND the "Environment name" in the PyPI
+    # trusted-publisher config. Create it under Settings -> Environments.
+    environment: pypi
+    permissions:
+      id-token: write # REQUIRED: lets the job mint the OIDC token PyPI verifies
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      - name: Build sdist + wheel
+        run: uv build
+      - name: Publish to PyPI (Trusted Publishing, no token)
+        # Uploads dist/* via OIDC. Pinned to the maintained release/v1 branch;
+        # swap for a commit SHA if you want strict pin parity with ci.yml.
+        uses: pypa/gh-action-pypi-publish@release/v1
