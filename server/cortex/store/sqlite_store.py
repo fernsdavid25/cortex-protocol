@@ -20,7 +20,7 @@ import sqlite3
 import threading
 import uuid
 from array import array
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -170,6 +170,15 @@ CREATE INDEX IF NOT EXISTS idx_memory_entities_entity ON memory_entities(user_id
 """
 
 
+# Ordered schema migrations. Entry ``i`` (0-based) upgrades a store at ``PRAGMA user_version == i``
+# to ``i + 1``; the ladder is applied inside a single transaction on connect and ``user_version`` is
+# then stamped to ``SCHEMA_VERSION``. The base ``_SCHEMA`` above already materialises the current
+# (v1) shape via ``CREATE TABLE IF NOT EXISTS``, so this list is empty today — but wiring the real
+# upgrade path NOW means the first shipped ALTER just appends a callable here instead of scrambling
+# to add "detect an old file and hand-patch it" logic after the fact.
+_MIGRATIONS: tuple[Callable[[sqlite3.Connection], None], ...] = ()
+
+
 class SQLiteStore:
     """A persistent, per-user memory store backed by a single SQLite file.
 
@@ -197,6 +206,30 @@ class SQLiteStore:
         self._conn.execute("PRAGMA foreign_keys=ON")
         self._conn.executescript(_SCHEMA)
         self._conn.commit()
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """Bring an existing DB up to ``SCHEMA_VERSION`` via the ordered ``_MIGRATIONS`` ladder.
+
+        Reads ``PRAGMA user_version`` (0 on a fresh file); if it is below ``SCHEMA_VERSION`` the
+        pending migrations run inside ONE transaction and ``user_version`` is stamped forward, so an
+        interrupted upgrade rolls back cleanly and never leaves a half-migrated file. A fresh DB
+        (whose current shape ``_SCHEMA`` just created) simply stamps the version with no migrations
+        to run.
+        """
+        with self._lock:
+            version = int(self._conn.execute("PRAGMA user_version").fetchone()[0])
+            if version >= SCHEMA_VERSION:
+                return
+            try:
+                for migrate in _MIGRATIONS[version:SCHEMA_VERSION]:
+                    migrate(self._conn)
+                # PRAGMA user_version takes no bound parameters; SCHEMA_VERSION is a trusted int.
+                self._conn.execute(f"PRAGMA user_version = {int(SCHEMA_VERSION)}")
+                self._conn.commit()
+            except Exception:
+                self._conn.rollback()
+                raise
 
     # -- lifecycle -------------------------------------------------------------
 
@@ -503,15 +536,15 @@ class SQLiteStore:
             self._conn.commit()
             return entity_id
 
-    def upsert_entity(self, user_id: str, name: str, type: str) -> str:
+    def upsert_entity(self, user_id: str, name: str, entity_type: str) -> str:
         """Resolve an entity by ``(user_id, norm_name)`` or create it; return its id.
 
         Dedup is by normalised name, so "Swizel", " swizel " and "SWIZEL" collapse to one node.
         If the row exists we conservatively UPGRADE a generic stored type ("" / "thing") to a more
         specific incoming one, but NEVER downgrade — and never touch a ``self`` node. An unknown
-        incoming ``type`` falls back to "thing".
+        incoming ``entity_type`` falls back to "thing".
         """
-        etype = type if type in VALID_ENTITY_TYPES else "thing"
+        etype = entity_type if entity_type in VALID_ENTITY_TYPES else "thing"
         norm = _norm_name(name)
         with self._lock:
             row = self._conn.execute(
@@ -752,7 +785,11 @@ def coerce_metadata(metadata: Mapping[str, object] | None) -> dict[str, object]:
         return {}
     data = dict(metadata)
     try:
-        json.dumps(data)
+        # Round-trip through JSON so the in-memory record matches the canonical form that ``add()``
+        # persists and ``get()``/``list_recent()`` read back (e.g. a tuple becomes a list, dict keys
+        # become strings). Without this, ``memorize(...).metadata`` could differ from the same
+        # memory reloaded from disk.
+        canonical: dict[str, object] = json.loads(json.dumps(data))
     except (TypeError, ValueError) as exc:
         raise ValueError(f"metadata must be JSON-serializable: {exc}") from exc
-    return data
+    return canonical

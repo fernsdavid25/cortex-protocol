@@ -84,14 +84,27 @@ class InMemoryStore:
 
         Embeddings are assumed L2-normalized (as produced by the providers), so the
         cosine reduces to a dot product; we still divide by norms defensively in case
-        a caller supplies raw vectors.
+        a caller supplies raw vectors. The query norm is computed ONCE outside the loop,
+        and each chunk is scored with ``strict=True`` zip so a dimension mismatch (a wrong
+        embedder for the store) raises loudly instead of silently truncating to the shorter
+        vector and returning a corrupt ranking.
         """
         if k <= 0 or not self._chunks:
             return []
-        scored = [
-            (self._cosine(query_vec, chunk.embedding), idx, chunk)
-            for idx, chunk in enumerate(self._chunks)
-        ]
+        nq = math.sqrt(sum(x * x for x in query_vec))
+        scored: list[tuple[float, int, MemoryChunk]] = []
+        for idx, chunk in enumerate(self._chunks):
+            emb = chunk.embedding
+            if not query_vec or not emb or nq == 0.0:
+                score = 0.0
+            else:
+                nc = math.sqrt(sum(y * y for y in emb))
+                if nc == 0.0:
+                    score = 0.0
+                else:
+                    dot = sum(x * y for x, y in zip(query_vec, emb, strict=True))
+                    score = dot / (nq * nc)
+            scored.append((score, idx, chunk))
         # Sort by score desc, breaking ties by insertion order for determinism.
         scored.sort(key=lambda t: (-t[0], t[1]))
         return [chunk for _score, _idx, chunk in scored[:k]]
@@ -135,15 +148,3 @@ class InMemoryStore:
         total = sum(len(tokens) for tokens in self._doc_tokens)
         self._avgdl = (total / len(self._doc_tokens)) if self._doc_tokens else 0.0
         self._index_dirty = False
-
-    @staticmethod
-    def _cosine(a: Sequence[float], b: Sequence[float]) -> float:
-        """Cosine similarity; returns 0.0 if either vector is empty or zero."""
-        if not a or not b:
-            return 0.0
-        dot = sum(x * y for x, y in zip(a, b, strict=False))
-        na = math.sqrt(sum(x * x for x in a))
-        nb = math.sqrt(sum(y * y for y in b))
-        if na == 0.0 or nb == 0.0:
-            return 0.0
-        return dot / (na * nb)

@@ -23,7 +23,7 @@ import math
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
-from typing import Protocol
+from typing import Any, Protocol
 
 from cortex.providers.base import LLMProvider
 from cortex.reader.reader import (
@@ -36,7 +36,8 @@ from cortex.reader.reader import (
     parse_supersession_verdict,
 )
 from cortex.retrieve.hybrid import hybrid_retrieve
-from cortex.store.sqlite_store import SELF_ALIASES, Memory, SQLiteStore, coerce_metadata
+from cortex.store.base import MemoryStore
+from cortex.store.sqlite_store import SELF_ALIASES, Memory, coerce_metadata
 
 log = logging.getLogger(__name__)
 
@@ -58,6 +59,9 @@ class Reranker(Protocol):
 _SOFT_UPDATE_FLOOR = 0.83
 # How many nearest neighbours to consider when picking a live soft-update candidate.
 _NEIGHBOR_POOL = 10
+# Extra candidates to over-fetch on recall when a supersession filter is active, so dropping the
+# superseded rows still leaves a full ``k`` LIVE memories rather than an under-filled result.
+_SUPERSEDE_HEADROOM = 10
 
 # G2 write-time graph: the ego/first-person tokens that resolve to the synthetic ``self`` entity
 # rather than a real entity row. The extractor is instructed to emit the literal ``self``; these
@@ -102,7 +106,7 @@ class CortexMemory:
     def __init__(
         self,
         provider: LLMProvider,
-        store: SQLiteStore,
+        store: MemoryStore,
         user_id: str = "local",
         top_k: int = 5,
         extractor: LLMProvider | None = None,
@@ -116,7 +120,7 @@ class CortexMemory:
         rerank_pool: int = 60,
     ) -> None:
         self.provider = provider
-        self.store = store
+        self.store: MemoryStore = store
         self.user_id = user_id
         self.top_k = top_k
         # L4 episodic (additive, OFF by default): with ``use_episodic`` false or no ``extractor``,
@@ -199,10 +203,17 @@ class CortexMemory:
         if supersede_old_id is not None:
             # UPDATE verdict: the new memory supersedes the old value so recall returns only the
             # latest. Best-effort — a failure here (e.g. a stale/bad id) must never break memorize.
-            try:
-                self.store.add_supersession(supersede_old_id, memory.id, memory.created_at)
-            except Exception:
-                log.warning("supersession record failed for memory %s; continuing", memory.id[:8])
+            # ``add_supersession`` is an optional store capability (resolved via getattr so the
+            # engine types against the core ``MemoryStore`` Protocol); it is always present here
+            # because ``supersede_old_id`` is only set inside the ``hasattr`` branch above.
+            record = getattr(self.store, "add_supersession", None)
+            if callable(record):
+                try:
+                    record(supersede_old_id, memory.id, memory.created_at)
+                except Exception:
+                    log.warning(
+                        "supersession record failed for memory %s; continuing", memory.id[:8]
+                    )
         # L4 episodic + G2 graph write-time enrichment — additive and OFF by default. BOTH features
         # derive from ONE shared ``extractor.generate`` call (the folded flash-lite extraction), so
         # a memorize with both on still spends a single aux call. When neither flag is on (or no
@@ -228,11 +239,21 @@ class CortexMemory:
         related = self._related_memories(vec)
         if not related:
             return None, None
-        top_mem, top_cos = related[0]
-        if self.use_dedup and top_cos >= self.dedup_threshold:
-            return top_mem, None  # near-identical to an existing memory → skip the write
+        # Fetch the superseded set ONCE. Both branches below must ignore superseded neighbours: a
+        # restated-but-currently-true fact whose nearest neighbour is an OLD (superseded) row must
+        # be written fresh, never absorbed back into the dead row (which would make it vanish from
+        # recall — the A→B→A "Paris→Berlin→Paris" loss).
+        superseded = self._superseded_ids()
+        if self.use_dedup:
+            # Absorb into the highest-cosine LIVE near-duplicate; if the only near-duplicate is a
+            # superseded row, fall through and write the new (currently-true) memory fresh.
+            dup = next(
+                (m for m, c in related if c >= self.dedup_threshold and m.id not in superseded),
+                None,
+            )
+            if dup is not None:
+                return dup, None  # near-identical to a LIVE memory → skip the write
         if self.use_soft_update and self.arbiter is not None:
-            superseded = self.store.superseded_ids(self.user_id)
             candidate = next(
                 (
                     m
@@ -329,9 +350,15 @@ class CortexMemory:
         Best-effort: any parse/write error is logged and swallowed so episodic enrichment can never
         fail memorize. Byte-identical to the pre-graph episodic write (same parser, same row).
         """
+        # ``add_event`` is an optional store capability (resolved via getattr so the engine types
+        # against the core ``MemoryStore`` Protocol); it is present here because ``_enrich`` only
+        # calls this method when ``hasattr(self.store, "add_event")``.
+        add_event = getattr(self.store, "add_event", None)
+        if not callable(add_event):
+            return
         try:
             parsed = parse_episodic_extraction(text, fallback_event_time=memory.created_at)
-            self.store.add_event(
+            add_event(
                 memory_id=memory.id,
                 user_id=memory.user_id,
                 event_time=parsed["event_time"],
@@ -352,7 +379,12 @@ class CortexMemory:
         mentioned entity (role=mention). Wrapped whole in try/except: a bad extraction must NEVER
         fail memorize or touch the stored memory.
         """
-        store = self.store
+        # The entity-graph methods (ensure_self_entity/upsert_entity/add_entity_edge/
+        # link_memory_entity) are an OPTIONAL store capability outside the core ``MemoryStore``
+        # Protocol; ``_enrich`` only calls this method when ``hasattr(self.store,
+        # "ensure_self_entity")``. Bind the store as ``Any`` here so this duck-typed enrichment
+        # surface stays additive and never leaks into the engine's core typed contract.
+        store: Any = self.store
         try:
             parsed = parse_graph_extraction(text)
             self_id = store.ensure_self_entity(self.user_id)
@@ -415,27 +447,46 @@ class CortexMemory:
             return []
         qvec = self._embed(query, "query")
         # With a reranker configured, over-retrieve a deeper POOL so the cross-encoder has real
-        # candidates to reorder; with no reranker ``depth == k`` and every line below is exactly the
-        # pre-rerank path (same search/hybrid call, same superseded filter, same return) — the
-        # ``_rerank`` call is then a no-op that returns the pool unchanged, so recall is
-        # byte-identical to today.
-        depth = k if self.reranker is None else max(self.rerank_pool, k)
-        # Prefer a store-side hybrid pushdown (Postgres/pgvector: dense <=> + FTS, fused in-DB) —
-        # lower latency + no full-store load. Stores without it (SQLite) use the in-memory path.
+        # candidates to reorder, then filter superseded rows and rerank down to ``k``.
+        if self.reranker is not None:
+            pool = self._retrieve_pool(query, qvec, max(self.rerank_pool, k))
+            return self._rerank(query, self._filter_superseded(pool), k)
+        # No reranker AND no supersession filter: the byte-identical pre-L5 path — fetch exactly
+        # ``k`` and return them (the filter is a no-op that returns the pool unchanged, and it
+        # never consults the store's supersession set).
+        if not self._supersession_filter_active():
+            return self._filter_superseded(self._retrieve_pool(query, qvec, k))
+        # Supersession filter IS active: fetching only ``k`` would under-fill once the superseded
+        # rows are dropped, so over-fetch with headroom and grow the depth until we have ``k`` LIVE
+        # results (or the store is exhausted). Retrieval is RRF-ordered, so a deeper fetch only
+        # extends the tail — the top-``k`` live ordering is preserved.
+        depth = k + _SUPERSEDE_HEADROOM
+        while True:
+            pool = self._retrieve_pool(query, qvec, depth)
+            live = self._filter_superseded(pool)
+            if len(live) >= k or len(pool) < depth:
+                return live[:k]
+            depth *= 2
+
+    def _retrieve_pool(self, query: str, qvec: Sequence[float], depth: int) -> list[Memory]:
+        """Return up to ``depth`` RRF-ordered candidate memories (superseded rows NOT yet filtered).
+
+        Prefers a store-side hybrid pushdown (Postgres/pgvector: dense ``<=>`` + FTS, fused in-DB) —
+        lower latency + no full-store load. Stores without it (SQLite) materialise the user's rows
+        and run the tested in-memory hybrid pipeline.
+        """
         search = getattr(self.store, "search", None)
         if callable(search):
-            pool = self._filter_superseded(search(self.user_id, query, qvec, depth))
-            return self._rerank(query, pool, k)
+            return list(search(self.user_id, query, qvec, depth))
         index, by_id = self.store.build_index(self.user_id)
         if len(index) == 0:
             return []
-        chunks = hybrid_retrieve(index, query, qvec, depth)
         out: list[Memory] = []
-        for chunk in chunks:
+        for chunk in hybrid_retrieve(index, query, qvec, depth):
             mem = by_id.get(chunk.session_id)
             if mem is not None:
                 out.append(mem)
-        return self._rerank(query, self._filter_superseded(out), k)
+        return out
 
     def _rerank(self, query: str, pool: list[Memory], k: int) -> list[Memory]:
         """Reorder an RRF-ordered candidate ``pool`` with the cross-encoder, keeping the top ``k``.
@@ -455,10 +506,19 @@ class CortexMemory:
             log.warning("rerank failed for user %s; falling back to RRF top-%d", self.user_id, k)
             return pool[:k]
         by_id = {m.id: m for m in pool}
-        ranked = [by_id[i] for i in ranked_ids if i in by_id]
+        # Dedupe the returned ids preserving order (seen-set): a misbehaving reranker that repeats
+        # an id must NOT inject the same Memory twice into the result.
+        seen: set[str] = set()
+        ranked: list[Memory] = []
+        for i in ranked_ids:
+            if i in by_id and i not in seen:
+                seen.add(i)
+                ranked.append(by_id[i])
         if len(ranked) < k:  # backfill dropped/unknown ids in the original RRF order (no dupes)
-            seen = {m.id for m in ranked}
-            ranked.extend(m for m in pool if m.id not in seen)
+            for m in pool:
+                if m.id not in seen:
+                    seen.add(m.id)
+                    ranked.append(m)
         return ranked[:k]
 
     def _filter_superseded(self, memories: list[Memory]) -> list[Memory]:
@@ -469,14 +529,32 @@ class CortexMemory:
         pre-L5 result. Only when dedup/soft-update is active (and the store supports it) do we
         consult the supersession set and filter.
         """
-        if not (self.use_dedup or self.use_soft_update):
+        if not self._supersession_filter_active():
             return memories
-        if not hasattr(self.store, "superseded_ids"):
-            return memories
-        superseded = self.store.superseded_ids(self.user_id)
+        superseded = self._superseded_ids()
         if not superseded:
             return memories
         return [m for m in memories if m.id not in superseded]
+
+    def _supersession_filter_active(self) -> bool:
+        """True iff anti-saturation is on AND the store exposes the supersession set.
+
+        Load-bearing for the byte-identical guarantee: with BOTH L5 flags off this is False, so
+        recall neither over-fetches nor consults the supersession set — exactly the pre-L5 path.
+        """
+        return (self.use_dedup or self.use_soft_update) and hasattr(self.store, "superseded_ids")
+
+    def _superseded_ids(self) -> set[str]:
+        """This user's superseded memory ids, or an empty set if the store predates the feature.
+
+        ``superseded_ids`` is an optional store capability, resolved via getattr so the engine can
+        type against the core ``MemoryStore`` Protocol without the enrichment surface leaking in.
+        """
+        fn = getattr(self.store, "superseded_ids", None)
+        if not callable(fn):
+            return set()
+        result: set[str] = fn(self.user_id)
+        return result
 
     def list_memories(self, limit: int = 20) -> list[Memory]:
         """Return the most recently added memories first."""
