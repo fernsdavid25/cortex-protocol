@@ -7,8 +7,8 @@ portable memory, and any agent reads it with your consent. This guide covers loc
 
 ## Layout
 
-- `server/cortex/` — the engine + MCP server (the published `cortex-mcp` package).
-  - `mcp/server.py` — the stdio MCP server (`uvx cortex-mcp`); exposes the six memory tools
+- `server/cortex/` — the engine + MCP server (the published `cortex-protocol` package).
+  - `mcp/server.py` — the stdio MCP server (`uvx --from cortex-protocol cortex-mcp`); exposes the six memory tools
     (`recall_about`/`recall_timeline` are live only with `CORTEX_GRAPH=1`/`CORTEX_EPISODIC=1`).
   - `memory.py` — the `CortexMemory` engine (memorize / recall / list / forget, plus the opt-in
     episodic, entity-graph, and anti-saturation layers).

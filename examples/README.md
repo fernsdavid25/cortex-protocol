@@ -16,7 +16,7 @@ Copy the `cortex` block into the right file and restart the client.
   "mcpServers": {
     "cortex": {
       "command": "uvx",
-      "args": ["cortex-mcp"],
+      "args": ["--from", "cortex-protocol", "cortex-mcp"],
       "env": { "GEMINI_API_KEY": "your-gemini-api-key-here" }
     }
   }

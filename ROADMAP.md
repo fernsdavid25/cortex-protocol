@@ -55,7 +55,7 @@ Cortex numbers are graded by a Gemini judge (disclosed); the canonical LongMemEv
 
 ### 2. Near-term — distribution and cross-device
 
-- **PyPI publish** — `uvx cortex-mcp` with no checkout, so any MCP client wires it in with one
+- **PyPI publish** — `uvx --from cortex-protocol cortex-mcp` with no checkout, so any MCP client wires it in with one
   config snippet.
 - **Remote streamable-HTTP server + OAuth ("Sign in with Cortex")** — the cross-device path: point
   ChatGPT, Claude, Cursor, and Claude Code at the *same* memory, authorized per agent with your

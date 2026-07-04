@@ -146,7 +146,7 @@ reranking. The engine never imports the Vertex SDK — it duck-types the injecte
 ## The MCP tool surface
 
 [`mcp/server.py`](../server/cortex/mcp/server.py) wraps the engine as a
-[FastMCP](https://github.com/jlowin/fastmcp) **stdio** server (`uvx cortex-mcp`, or
+[FastMCP](https://github.com/jlowin/fastmcp) **stdio** server (`uvx --from cortex-protocol cortex-mcp`, or
 `python -m cortex.mcp.server` from a checkout). The engine is built lazily from environment config on
 first tool call, so importing the module needs no API key. Six tools are exposed:
 

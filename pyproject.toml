@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "cortex-mcp"
-version = "0.0.1"
+name = "cortex-protocol"
+version = "0.1.0"
 description = "User-owned, cross-agent AI memory — open-source memory MCP server."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -39,7 +39,7 @@ openai = ["openai>=1.40.0"]
 dev = ["pytest>=8.0", "ruff>=0.6", "mypy>=1.11"]
 
 [project.scripts]
-cortex-mcp = "cortex.mcp.server:main"     # uvx cortex-mcp  ->  local stdio memory server
+cortex-mcp = "cortex.mcp.server:main"     # uvx --from cortex-protocol cortex-mcp  ->  local stdio memory server
 
 [tool.hatch.build.targets.wheel]
 packages = ["server/cortex", "bench/cortex_bench"]

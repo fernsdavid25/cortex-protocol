@@ -116,7 +116,7 @@ local SQLite file (`~/.cortex/memory.db`), **nothing phones home**.
   "mcpServers": {
     "cortex": {
       "command": "uvx",
-      "args": ["cortex-mcp"],
+      "args": ["--from", "cortex-protocol", "cortex-mcp"],
       "env": { "GEMINI_API_KEY": "your-key-here" }
     }
   }

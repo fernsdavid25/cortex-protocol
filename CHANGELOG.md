@@ -3,10 +3,12 @@
 All notable changes to Cortex Protocol are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/); this project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.0] — 2026-07-04 — first public release
+
+Published to PyPI as [`cortex-protocol`](https://pypi.org/project/cortex-protocol/); install/run with `uvx --from cortex-protocol cortex-mcp`.
 
 ### Added
-- **Local memory MCP server** (`uvx cortex-mcp`): a stdio MCP server exposing six tools —
+- **Local memory MCP server** (`uvx --from cortex-protocol cortex-mcp`): a stdio MCP server exposing six tools —
   `memorize`, `recall`, `list_memories`, `forget`, plus `recall_about` and `recall_timeline`
   (gated on the opt-in `CORTEX_GRAPH` / `CORTEX_EPISODIC` layers) — to coding agents (Claude Code,
   Cursor, …). BYOK (Gemini), local SQLite storage, zero phone-home.
@@ -20,7 +22,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/); this project
   per-question cost accounting; on-disk embedding cache; provider retry/backoff + request timeout.
 - **CI**: ruff + mypy + pytest + gitleaks secret scan.
 - **`.mcpb` bundle** ([`packaging/mcpb/`](packaging/mcpb/)) for one-click Claude Desktop install
-  (launches `uvx cortex-mcp`; key entered at install time).
+  (launches `uvx --from cortex-protocol cortex-mcp`; key entered at install time).
 - **LoCoMo evaluation** support in the harness (`--locomo`) for multi-hop / temporal / adversarial
   question categories.
 
@@ -36,4 +38,4 @@ The format follows [Keep a Changelog](https://keepachangelog.com/); this project
   [`bench/results/leaderboard_research.md`](bench/results/leaderboard_research.md).
 
 ### Notes
-- Versioned `0.0.1` (pre-release). Storage format and APIs may change before `0.1.0`.
+- Versioned `0.1.0` (first public release). Storage format and APIs may change before `1.0.0`.

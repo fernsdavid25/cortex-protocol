@@ -7,7 +7,7 @@ surface (Goal.md Phase 4.1): BYOK (the user's own Gemini key), a local SQLite DB
 (Phase 4.3); this stdio server is the stepping stone.
 
 Run:
-    uvx cortex-mcp                 # once published
+    uvx --from cortex-protocol cortex-mcp   # once published
     python -m cortex.mcp.server    # from a checkout
 
 Environment (all optional except the key):
@@ -31,7 +31,8 @@ stay byte-identical and cost the same one embed as today. With every flag off (t
 engine is byte-identical to the pre-enrichment server.
 
 Add to a Claude Code / Cursor MCP config:
-    {"mcpServers": {"cortex": {"command": "uvx", "args": ["cortex-mcp"],
+    {"mcpServers": {"cortex": {
+      "command": "uvx", "args": ["--from", "cortex-protocol", "cortex-mcp"],
       "env": {"GEMINI_API_KEY": "..."}}}}
 """
 

@@ -1,9 +1,9 @@
 {
   "$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/schemas/mcpb-manifest-v0.4.schema.json",
   "manifest_version": "0.4",
-  "name": "cortex-mcp",
+  "name": "cortex-protocol",
   "display_name": "Cortex Memory",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "User-owned, cross-agent memory for AI agents — local, BYOK, nothing phones home.",
   "long_description": "Cortex gives your agent persistent, cross-session memory. Save durable facts/preferences with `memorize`, retrieve them with `recall` (hybrid dense + BM25 retrieval). Memories live in a local SQLite file; embeddings use your own Gemini key (BYOK). Open-source (Apache-2.0).",
   "author": { "name": "David Fernandes" },
@@ -14,7 +14,7 @@
     "entry_point": "cortex.mcp.server",
     "mcp_config": {
       "command": "uvx",
-      "args": ["cortex-mcp"],
+      "args": ["--from", "cortex-protocol", "cortex-mcp"],
       "env": {
         "GEMINI_API_KEY": "${user_config.gemini_api_key}",
         "CORTEX_DB_PATH": "${user_config.db_path}",
