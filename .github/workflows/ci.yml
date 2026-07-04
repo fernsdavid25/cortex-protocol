@@ -83,10 +83,13 @@ jobs:
         run: uv run --extra dev pytest --cov=cortex --cov-report=term-missing --cov-report=xml --cov-fail-under=85
 
       - name: Upload coverage to Codecov
-        # One representative cell only. fail_ci_if_error stays false so a not-yet-
-        # connected Codecov app (repo still private) can never break CI.
+        # One representative cell only. fail_ci_if_error stays false so a transient Codecov
+        # hiccup can never break CI. token is read from the CODECOV_TOKEN repo secret; if the
+        # secret is unset the action falls back to tokenless upload (public repo).
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # v5
         with:
           files: ./coverage.xml
           fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: fernsdavid25/cortex-protocol
