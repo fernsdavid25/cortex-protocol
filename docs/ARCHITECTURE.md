@@ -38,7 +38,7 @@ self-hoster pays is their own embedding tokens against their own key, and nothin
 | [`store/`](../server/cortex/store/) | `SQLiteStore` (the persistent product store) and `InMemoryStore` (the dense + BM25 store the retriever runs over). |
 | [`retrieve/`](../server/cortex/retrieve/) | `hybrid_retrieve` — dense + BM25 fused with Reciprocal Rank Fusion. |
 | [`reader/`](../server/cortex/reader/) | Chain-of-Note reader prompts + the write-time extraction / arbiter prompts. |
-| [`mcp/server.py`](../server/cortex/mcp/server.py) | The stdio MCP server: the five agent-facing tools. |
+| [`mcp/server.py`](../server/cortex/mcp/server.py) | The stdio MCP server: the six agent-facing tools. |
 | [`profiles.py`](../server/cortex/profiles.py) | `CORTEX_TIER` profiles (cheap vs flagship) — the single source of truth for reader/retrieval knobs. |
 
 ## The provider abstraction (BYOK)

@@ -18,6 +18,14 @@ rows, unpacks each float32 blob, and materialises a fresh `InMemoryStore` **on e
 So each recall is **O(n)** in both I/O (blob unpack) and CPU (n×dim cosine + n-doc BM25), with no
 caching between calls.
 
+The same honesty applies to **memorize** once the L5 anti-saturation layer is enabled: with
+`use_dedup` or `use_soft_update` on, each write first runs `_related_memories` (`server/cortex/memory.py`),
+which calls the very same `build_index(user_id)` + dense scan — so every memorize also becomes an
+**O(n) full-store scan** (plus, in the soft-update band, one cheap arbiter call). With both flags off
+(the default) memorize stays a single embed + insert with no scan. This is the write-path mirror of
+the recall cost above, and the pgvector HNSW path in §2 removes it the same way: the neighbour lookup
+becomes an indexed `ORDER BY embedding <=> %s::vector LIMIT k` instead of loading the whole store.
+
 Harness #1 (`FakeProvider`, dim=768, 30 queries/size, one user) makes the trend concrete:
 
 ```

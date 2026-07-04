@@ -1,0 +1,49 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+  # Allow a manual rebuild from the Actions tab.
+  workflow_dispatch:
+
+# GitHub Pages deploy needs pages:write + id-token:write; everything else is read-only.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One in-flight Pages deploy at a time; don't cancel a running one mid-publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Third-party actions are pinned to full commit SHAs (matching ci.yml) so a tag-repoint
+      # supply-chain attack (cf. tj-actions CVE-2025-30066) can't inject code.
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          enable-cache: true
+
+      # mkdocs-material + mkdocstrings[python] are declared in the `docs` extra (pyproject.toml),
+      # so the strict build runs against the locked toolchain.
+      - name: Build docs (mkdocs --strict)
+        run: uv run --extra docs mkdocs build --strict
+
+      # First-party GitHub Pages actions — kept on their latest major v-tags (published and
+      # maintained by GitHub) rather than SHA-pinned.
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3 # GitHub-official; artifact defaults to ./_site
+        with:
+          path: site # mkdocs builds into ./site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4 # GitHub-official Pages deploy

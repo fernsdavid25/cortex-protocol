@@ -54,3 +54,6 @@ Thumbs.db
 *.log
 .idea/
 .vscode/
+
+# mkdocs build output
+site/

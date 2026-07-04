@@ -1,0 +1,79 @@
+site_name: Cortex Protocol
+site_description: User-owned, cross-agent AI memory — an open-source memory MCP server.
+repo_url: https://github.com/fernsdavid25/cortex-protocol
+repo_name: fernsdavid25/cortex-protocol
+docs_dir: docs
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - content.code.copy
+    - toc.follow
+  palette:
+    # Light mode (default) with a toggle to dark.
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    # Dark mode.
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - Architecture: ARCHITECTURE.md
+  - Decades-scale: L6_Decades_Scale.md
+  - API reference: api.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          # The package lives under server/cortex; griffe analyses it statically from here,
+          # so building the docs needs none of the engine's runtime deps or an API key.
+          paths: [server]
+          options:
+            docstring_style: google
+            show_root_heading: true
+            show_source: true
+            show_signature_annotations: true
+            separate_signature: true
+            members_order: source
+            filters: ["!^_"]
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+
+# The prose docs (ARCHITECTURE.md, L6_Decades_Scale.md) deliberately link out to source files
+# under ../server/*.py and to ../ROADMAP.md / ../.env.example — those live in the repo but are
+# not part of the built site, so a --strict build must not fail over them. Nav wiring and
+# mkdocstrings import/reference errors still hard-fail the build.
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+  links:
+    not_found: ignore
+    anchors: ignore
+    absolute_links: ignore
+    unrecognized_links: ignore
