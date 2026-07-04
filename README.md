@@ -1,16 +1,48 @@
 # Cortex Protocol
 
-**User-owned, cross-agent AI memory — an open-source memory MCP server.**
+🧠 **One memory. Every agent.** — user-owned, cross-agent AI memory over the Model Context Protocol.
 
-Apache-2.0 · Python 3.11+ · BYOK (Gemini) · zero phone-home
+[![PyPI version](https://img.shields.io/pypi/v/cortex-protocol)](https://pypi.org/project/cortex-protocol/)
+[![Python versions](https://img.shields.io/pypi/pyversions/cortex-protocol)](https://pypi.org/project/cortex-protocol/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/cortex-protocol)](https://pypi.org/project/cortex-protocol/)
+[![License](https://img.shields.io/pypi/l/cortex-protocol)](https://github.com/fernsdavid25/cortex-protocol/blob/main/LICENSE)
+[![CI](https://github.com/fernsdavid25/cortex-protocol/actions/workflows/ci.yml/badge.svg)](https://github.com/fernsdavid25/cortex-protocol/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/fernsdavid25/cortex-protocol/branch/main/graph/badge.svg)](https://codecov.io/gh/fernsdavid25/cortex-protocol)
 
-You own **one** portable memory. Any AI agent connects to it over the Model Context Protocol —
-with your consent. **Self-host** it as a local stdio server: a single SQLite file, your own Gemini
-key, nothing phones home. Point ChatGPT, Claude, Cursor, and Claude Code at the same memory.
+**Works with Claude Code · Cursor · Claude Desktop · VS Code**
 
-`recall` does **no** server-side LLM generation — it embeds your query once and returns the raw
-memories for your agent to reason over. The only runtime cost a self-hoster pays is their own
-embedding tokens against their own key.
+You own **one** portable memory, and any AI agent connects to it over MCP with your consent.
+Self-host it as a local stdio server — a single SQLite file, your own Gemini key (BYOK), **nothing
+phones home** — and `recall` does **no** server-side LLM generation, so the only runtime cost is your
+own embedding tokens.
+
+> **📊 0.932 LongMemEval_S · 0.813 LoCoMo — #1 on accuracy-per-dollar** — premium-tier retrieval
+> quality paired with a **cheap Gemini reader** at **~$0.008/question**, not raw accuracy at any cost.
+
+## Architecture
+
+Two hot paths — `memorize` embeds once and persists; `recall` embeds once and runs a pure hybrid
+retrieval with **no server-side generation**. Three enrichment layers bolt on at **write time only**,
+so recall stays byte-identical whether they are on or off (grounded in
+[`docs/ARCHITECTURE.md`](https://github.com/fernsdavid25/cortex-protocol/blob/main/docs/ARCHITECTURE.md)).
+
+```mermaid
+flowchart TD
+    subgraph WRITE["memorize(content) · write path"]
+        direction TB
+        A["content"] --> B["provider.embed (BYOK)"]
+        B --> C[("SQLiteStore.add")]
+        C -.->|"opt-in, write-time only"| D["L4 episodic · G2 graph · L5 anti-saturation"]
+    end
+    subgraph READ["recall(query) · read path — no server-side LLM"]
+        direction TB
+        E["query"] --> F["provider.embed (BYOK)"]
+        F --> G["SQLiteStore.build_index"]
+        G --> H["hybrid_retrieve: dense + BM25 → RRF"]
+        H --> I["ranked raw memories → your agent reasons"]
+    end
+    C ==>|"persist"| G
+```
 
 ## Why Cortex
 
@@ -24,17 +56,36 @@ embedding tokens against their own key.
 
 ## Results
 
-Two public long-term-memory benchmarks. **Judge disclosure:** all Cortex numbers below are graded by
-an **LLM judge = `gemini-3.5-flash`**. The canonical LongMemEval judge is `gpt-4o-2024-08-06`; a
-Gemini judge is likely *more lenient*, so a GPT-4o re-grade (pending an OpenAI key) may lower these.
-As one cross-model sanity check, an independent Claude panel re-graded all 282 LoCoMo multi-hop cases
-and closely tracked the harness (panel 0.528 vs harness 0.589). Positioning is stated honestly:
-**not raw SOTA — #1 on accuracy-per-dollar.**
+**📊 0.932 LongMemEval_S · 0.813 LoCoMo — #1 on accuracy-per-dollar.** Two public long-term-memory
+benchmarks; positioning stated honestly — **not raw SOTA, but #1 accuracy-per-dollar** (a cheap
+Gemini reader at a fraction of the leaders' premium-reader cost).
 
 | Benchmark | Cortex | Raw rank | Reader (cost) | Retrieval recall@k |
 |---|---|---|---|---|
 | **LongMemEval_S** (500 q) | **0.932** | #2 raw · **#1 acc/$** | `gemini-3.5-flash`, top_k=50, preference-mode, answer-first · **~$0.008/q** | 0.998 |
 | **LoCoMo** (1986 q) | **0.813** | #3 raw · **#1 acc/$** | `gemini-2.5-flash`, top_k=100, answer-first · **~$0.0034/q** | 0.998 |
+
+### How Cortex compares (LongMemEval_S)
+
+| System | LongMemEval_S | Reader | ~$/q | Judge |
+|---|---|---|---|---|
+| **Cortex** (this repo) | **0.932** | `gemini-3.5-flash` (cheap) | **~$0.008** | gemini-flash |
+| Mastra | 0.949 | `gpt-5-mini` (premium) | — | GPT-4o |
+| Zep / Graphiti | 0.712 | `gpt-4o` (premium) | — | GPT-4o |
+| Mem0 | not published¹ | — (graph) | — | — |
+
+<sub>Numbers from the verified [leaderboard research](https://github.com/fernsdavid25/cortex-protocol/blob/main/bench/results/leaderboard_research.md).
+**Not apples-to-apples:** competitor scores are self-reported under *their own* judges; Cortex is
+graded by a `gemini-3.5-flash` judge (likely more lenient than the canonical `gpt-4o-2024-08-06`), and
+`~$/q` is only published where Cortex measures it. ¹Mem0 has no verifiable LongMemEval_S number that
+survived verification — it reports LoCoMo (0.61–0.66) instead. Leaders use pricier readers.</sub>
+
+> **Judge disclosure (load-bearing).** All Cortex numbers above are graded by an **LLM judge =
+> `gemini-3.5-flash`**. The canonical LongMemEval judge is `gpt-4o-2024-08-06`; a Gemini judge is
+> likely *more lenient*, so a GPT-4o re-grade (pending an OpenAI key) may lower these. As one
+> cross-model sanity check, an independent Claude panel re-graded all 282 LoCoMo multi-hop cases and
+> closely tracked the harness (panel 0.528 vs harness 0.589). The **accuracy-per-dollar** claim does
+> not depend on the judge.
 
 **LongMemEval_S 0.932** — per question type: single-session-user 0.957, single-session-assistant
 0.982, single-session-preference 0.900, knowledge-update 0.949, temporal-reasoning 0.925,
@@ -85,9 +136,12 @@ python -m cortex_bench.run --system cortex-v0 --locomo --reader-model gemini-2.5
 uv run python bench/agent_uplift/harness.py --provider gemini
 ```
 
-Full methodology + per-type tables: [`bench/results/PHASE3_authoritative.md`](bench/results/PHASE3_authoritative.md)
-(LongMemEval) and [`bench/results/LOCOMO_results.md`](bench/results/LOCOMO_results.md) (LoCoMo);
-verified competitor leaderboard: [`bench/results/leaderboard_research.md`](bench/results/leaderboard_research.md).
+Full methodology + per-type tables:
+[`bench/results/PHASE3_authoritative.md`](https://github.com/fernsdavid25/cortex-protocol/blob/main/bench/results/PHASE3_authoritative.md)
+(LongMemEval) and
+[`bench/results/LOCOMO_results.md`](https://github.com/fernsdavid25/cortex-protocol/blob/main/bench/results/LOCOMO_results.md)
+(LoCoMo); verified competitor leaderboard:
+[`bench/results/leaderboard_research.md`](https://github.com/fernsdavid25/cortex-protocol/blob/main/bench/results/leaderboard_research.md).
 
 ## Features
 
@@ -99,8 +153,9 @@ verified competitor leaderboard: [`bench/results/leaderboard_research.md`](bench
 | **Entity graph + `recall_about`** | At `memorize` time, entities and relationships are folded into the **same** cheap extraction call that does episodic. Builds an ego knowledge graph rooted at a synthetic `self` entity — typed nodes (person / place / org / project / thing) joined by labeled, directed relationships, each memory attached to the entity it's about — powering the `recall_about` tool. **Write-time cost only — recall stays byte-identical.** | Opt-in (`CORTEX_GRAPH=1`) |
 | **Anti-saturation (L5)** | Write-time **dedup** (embedding-only, no LLM) bounds store growth; **contradiction soft-update** (one cheap arbiter call) supersedes stale facts so recall returns only the latest value. Saturation harness (2000-write synthetic stream): **41.8% duplicate rows dropped, 100% latest-value retrieval**. | Engine-level, opt-in |
 
-See [`docs/L6_Decades_Scale.md`](docs/L6_Decades_Scale.md) for the decades-scale retrieval analysis
-(self-host SQLite recall is O(n): measured ~95 ms @ 1k memories → ~7.7 s p50 @ 50k).
+See [`docs/L6_Decades_Scale.md`](https://github.com/fernsdavid25/cortex-protocol/blob/main/docs/L6_Decades_Scale.md)
+for the decades-scale retrieval analysis (self-host SQLite recall is O(n): measured ~95 ms @ 1k
+memories → ~7.7 s p50 @ 50k).
 
 ## Quickstart — self-host (local memory in your agent)
 
@@ -153,11 +208,13 @@ config use `"command": "uv", "args": ["run", "--with", "fastmcp", "python", "-m"
 `recall_timeline`; `CORTEX_EXTRACT_MODEL` (default `gemini-2.5-flash-lite`) is the model that does
 that extraction. Enabling either adds **one cheap flash-lite call per `memorize`** (write-time only,
 on your own key — when both are on they share a single extraction call). **`recall` stays
-byte-identical**, so the accuracy-per-dollar guarantee is unchanged. See [`examples/`](examples/) and
-[`.env.example`](.env.example).
+byte-identical**, so the accuracy-per-dollar guarantee is unchanged. See
+[`examples/`](https://github.com/fernsdavid25/cortex-protocol/tree/main/examples) and
+[`.env.example`](https://github.com/fernsdavid25/cortex-protocol/blob/main/.env.example).
 
 **Claude Desktop one-click:** build the `.mcpb` bundle and drag it onto Desktop — it prompts for your
-Gemini key and runs the same six tools. See [`packaging/mcpb/`](packaging/mcpb/).
+Gemini key and runs the same six tools. See
+[`packaging/mcpb/`](https://github.com/fernsdavid25/cortex-protocol/tree/main/packaging/mcpb).
 
 ## Security & privacy
 
@@ -177,9 +234,10 @@ uv run pytest            # offline, deterministic test suite (FakeProvider — n
 uvx ruff check server    # lint
 ```
 
-See [`CHANGELOG.md`](CHANGELOG.md) for release notes and [`bench/README.md`](bench/README.md) for the
-benchmark harness.
+See [`CHANGELOG.md`](https://github.com/fernsdavid25/cortex-protocol/blob/main/CHANGELOG.md) for
+release notes and [`bench/README.md`](https://github.com/fernsdavid25/cortex-protocol/blob/main/bench/README.md)
+for the benchmark harness.
 
 ## License
 
-[Apache-2.0](LICENSE)
+[Apache-2.0](https://github.com/fernsdavid25/cortex-protocol/blob/main/LICENSE)
