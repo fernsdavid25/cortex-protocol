@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cortex-protocol"
-version = "0.1.0"
+dynamic = ["version"]
 description = "User-owned, cross-agent AI memory — open-source memory MCP server."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -36,10 +36,14 @@ Changelog = "https://github.com/fernsdavid25/cortex-protocol/blob/main/CHANGELOG
 [project.optional-dependencies]
 # The benchmark harness's optional GPT-4o judge backend (eval only; the product never uses it).
 openai = ["openai>=1.40.0"]
-dev = ["pytest>=8.0", "ruff>=0.6", "mypy>=1.11"]
+dev = ["pytest>=8.0", "ruff>=0.6", "mypy>=1.11", "pytest-cov>=5", "hypothesis>=6"]
+docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=0.26"]
 
 [project.scripts]
 cortex-mcp = "cortex.mcp.server:main"     # uvx --from cortex-protocol cortex-mcp  ->  local stdio memory server
+
+[tool.hatch.version]
+path = "server/cortex/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["server/cortex", "bench/cortex_bench"]
@@ -54,7 +58,7 @@ line-length = 100
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
+select = ["E", "F", "I", "UP", "B", "A"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["cortex", "cortex_bench"]
@@ -63,3 +67,10 @@ known-first-party = ["cortex", "cortex_bench"]
 python_version = "3.11"
 ignore_missing_imports = true
 check_untyped_defs = true
+disallow_untyped_defs = true
+
+[tool.coverage.run]
+source = ["cortex"]
+
+[tool.coverage.report]
+show_missing = true

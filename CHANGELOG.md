@@ -3,7 +3,35 @@
 All notable changes to Cortex Protocol are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/); this project uses [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] — 2026-07-04 — first public release
+## [Unreleased]
+
+## [0.2.0] - 2026-07-04
+
+Elite open-source hardening pass: documentation, quality gates, governance, and correctness.
+
+### Added
+- **Documentation site** (MkDocs Material + mkdocstrings) with API reference generated from
+  docstrings; new `docs` extra (`pip install cortex-protocol[docs]`).
+- **Coverage gate**: `pytest-cov` wired into CI with `[tool.coverage.run]`/`[tool.coverage.report]`
+  configuration and `show_missing` reporting.
+- **CI test matrix** across supported Python versions (3.11, 3.12).
+- **Governance automation**: issue/PR templates, `CONTRIBUTING`/`CODE_OF_CONDUCT`/`SECURITY`
+  policies, and automated dependency/release workflows.
+- **Property-based tests** via Hypothesis (added to the `dev` extra).
+- **Store `Protocol`**: an explicit typed interface for the persistence layer, decoupling the
+  engine from the concrete SQLite store.
+- **README badges** (CI, coverage, PyPI, license) and a single-sourced version.
+
+### Changed
+- **Version single-sourced** from `server/cortex/__init__.py` (`0.2.0`) via Hatch dynamic version;
+  `pyproject.toml` and the `.mcpb` manifest now track it.
+- **Stricter typing**: mypy `disallow_untyped_defs` enabled.
+- **Stricter linting**: ruff `flake8-builtins` (`A`) enabled to forbid shadowing builtins.
+
+### Fixed
+- Correctness fixes surfaced by the stricter type/lint gates and expanded test coverage.
+
+## [0.1.0] - 2026-07-04
 
 Published to PyPI as [`cortex-protocol`](https://pypi.org/project/cortex-protocol/); install/run with `uvx --from cortex-protocol cortex-mcp`.
 
@@ -39,3 +67,7 @@ Published to PyPI as [`cortex-protocol`](https://pypi.org/project/cortex-protoco
 
 ### Notes
 - Versioned `0.1.0` (first public release). Storage format and APIs may change before `1.0.0`.
+
+[Unreleased]: https://github.com/fernsdavid25/cortex-protocol/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/fernsdavid25/cortex-protocol/releases/tag/v0.2.0
+[0.1.0]: https://github.com/fernsdavid25/cortex-protocol/releases/tag/v0.1.0
