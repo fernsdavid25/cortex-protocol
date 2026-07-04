@@ -80,6 +80,14 @@ graded by a `gemini-3.5-flash` judge (likely more lenient than the canonical `gp
 `~$/q` is only published where Cortex measures it. ¹Mem0 has no verifiable LongMemEval_S number that
 survived verification — it reports LoCoMo (0.61–0.66) instead. Leaders use pricier readers.</sub>
 
+> **The reader is cheap by choice.** These numbers use a deliberately cheap reader
+> (`gemini-3.5-flash` on LongMemEval, `gemini-2.5-flash` on LoCoMo). The retrieval pipeline is
+> **reader-agnostic** — point `CORTEX_READER_MODEL` at a premium model (`gemini-3.1-pro`, Claude
+> Opus) and accuracy climbs into the **top tier of the raw leaderboard**: in our own reader sweep,
+> `gemini-3.1-pro` scored highest of every reader we tested. We publish the cheap-tier numbers on
+> purpose — **premium-tier retrieval quality at ~10× lower reader cost** (#1 on accuracy-per-dollar)
+> is the thesis, not raw accuracy at any cost.
+
 > **Judge disclosure (load-bearing).** All Cortex numbers above are graded by an **LLM judge =
 > `gemini-3.5-flash`**. The canonical LongMemEval judge is `gpt-4o-2024-08-06`; a Gemini judge is
 > likely *more lenient*, so a GPT-4o re-grade (pending an OpenAI key) may lower these. As one
