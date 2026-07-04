@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import time
 from collections.abc import Callable
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from .base import EmbedResult, GenResult, LLMProvider
 
@@ -76,7 +76,9 @@ class GeminiProvider(LLMProvider):
         self.embed_model = embed_model
         self.embed_dim = embed_dim
         self._api_key = api_key or os.environ.get("GOOGLE_API_KEY")
-        self._client = None
+        # Lazily built in _client_obj(); Any so mypy allows the genai.Client assignment without a
+        # module-level SDK import (the SDK is intentionally imported inside methods only).
+        self._client: Any = None
 
     def _client_obj(self):
         if self._client is None:
