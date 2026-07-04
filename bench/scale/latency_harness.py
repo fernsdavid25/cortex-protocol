@@ -11,7 +11,7 @@ every recall runs :meth:`SQLiteStore.build_index` (loads ALL of a user's rows in
 ``InMemoryStore``) and then ``hybrid_retrieve`` (dense cosine + BM25 over EVERY row). That is
 O(n) per query in both work and allocation. As N grows the per-recall latency grows with it,
 which is exactly why the decades-scale path must push retrieval into pgvector's HNSW index
-(see ``bench/scale/pgvector_latency.py`` and ``docs/L6_Decades_Scale.md``).
+(see ``bench/scale/pgvector_latency.py`` and ``docs/decades-scale.md``).
 
 The table reports, per store size N:
 

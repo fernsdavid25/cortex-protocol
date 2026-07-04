@@ -17,7 +17,7 @@ stays byte-identical whether they are on or off.
               SQLiteStore.add(memory, vec) ◄─ persist ─► SQLiteStore.build_index(user)
                         │                                       │      [ store/ ]
        (opt-in, write-time only)                                ▼
-        L4 episodic · G2 graph · L5           hybrid_retrieve: dense ⊕ BM25 → RRF
+        episodic · entity graph ·            hybrid_retrieve: dense ⊕ BM25 → RRF
         anti-saturation enrichment                             │      [ retrieve/ ]
                                                                 ▼
                                               ranked raw memories → the agent reasons
@@ -81,7 +81,7 @@ There are two stores with distinct jobs:
 At query time `SQLiteStore.build_index(user_id)` materializes that user's rows into a fresh
 `InMemoryStore` and hands it to the retriever. Brute-force cosine is ample at personal scale
 (thousands of memories); an ANN index (pgvector / HNSW) is a later, hosted-scale concern
-(see [ROADMAP.md](../ROADMAP.md) and `docs/L6_Decades_Scale.md`). The engine also probes for an
+(see [ROADMAP.md](../ROADMAP.md) and `docs/decades-scale.md`). The engine also probes for an
 optional `store.search(...)` pushdown (e.g. a Postgres dense `<=>` + FTS fusion); SQLite has none, so
 it takes the `build_index` path.
 
@@ -125,15 +125,15 @@ All three layers are **off by default** and act at **write time only**. With eve
 + hybrid retrieve — no extra model calls, and recall never even queries the enrichment tables. That
 byte-identical guarantee is what preserves the accuracy-per-dollar headline numbers.
 
-- **Episodic memory (L4)** — `use_episodic` + an `extractor`. One cheap extraction per `memorize`
+- **Episodic memory** — `use_episodic` + an `extractor`. One cheap extraction per `memorize`
   structures `event_time` / `actor` / `location` / `event_type` into the `events` table, powering
   `CortexMemory.timeline(...)`.
-- **Entity graph (G2)** — `use_graph`. Folded into the **same** extraction call as episodic (so
+- **Entity graph** — `use_graph`. Folded into the **same** extraction call as episodic (so
   enabling both still spends a single aux call). It upserts entities and labeled, directed
   relationships into an ego knowledge graph rooted at a synthetic `self` node (`ensure_self_entity`,
   `upsert_entity`, `add_entity_edge`, `link_memory_entity`), and links each memory to its subject and
   mentioned entities — powering the `recall_about` dossier read.
-- **Anti-saturation (L5)** — `use_dedup` (embedding-only, `dedup_threshold = 0.95`, **no LLM**) drops
+- **Anti-saturation** — `use_dedup` (embedding-only, `dedup_threshold = 0.95`, **no LLM**) drops
   near-identical rewrites to bound store growth; `use_soft_update` spends **one** cheap arbiter call,
   only in the "related but not duplicate" band (cosine `0.83`–`0.95`), to supersede a stale fact via
   the `supersessions` table so recall returns only the latest value.

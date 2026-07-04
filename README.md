@@ -32,7 +32,7 @@ flowchart TD
         direction TB
         A["content"] --> B["provider.embed (BYOK)"]
         B --> C[("SQLiteStore.add")]
-        C -.->|"opt-in, write-time only"| D["L4 episodic · G2 graph · L5 anti-saturation"]
+        C -.->|"opt-in, write-time only"| D["episodic memory<br/>entity graph<br/>anti-saturation"]
     end
     subgraph READ["recall(query) · read path — no server-side LLM"]
         direction TB
@@ -149,11 +149,11 @@ Full methodology + per-type tables:
 |---|---|---|
 | **Hybrid retrieval** | Dense (Gemini embeddings) + Okapi BM25, fused with Reciprocal Rank Fusion; deep top-k drives recall@k ≈ 1.0. | **On** (all paths) |
 | **Chain-of-Note reader** | The reader takes structured notes over the retrieved memories before answering, with **calibrated abstention** — it declines when no memory supports an answer instead of hallucinating. | **On** (benchmark path) |
-| **Episodic memory (L4) + `recall_timeline`** | One cheap `gemini-2.5-flash-lite` call per `memorize` structures event_time / actor / location, powering the `recall_timeline` tool. **Write-time cost only — recall is byte-identical**, so the accuracy-per-dollar guarantee holds. | Opt-in (`CORTEX_EPISODIC=1`) |
+| **Episodic memory + `recall_timeline`** | One cheap `gemini-2.5-flash-lite` call per `memorize` structures event_time / actor / location, powering the `recall_timeline` tool. **Write-time cost only — recall is byte-identical**, so the accuracy-per-dollar guarantee holds. | Opt-in (`CORTEX_EPISODIC=1`) |
 | **Entity graph + `recall_about`** | At `memorize` time, entities and relationships are folded into the **same** cheap extraction call that does episodic. Builds an ego knowledge graph rooted at a synthetic `self` entity — typed nodes (person / place / org / project / thing) joined by labeled, directed relationships, each memory attached to the entity it's about — powering the `recall_about` tool. **Write-time cost only — recall stays byte-identical.** | Opt-in (`CORTEX_GRAPH=1`) |
-| **Anti-saturation (L5)** | Write-time **dedup** (embedding-only, no LLM) bounds store growth; **contradiction soft-update** (one cheap arbiter call) supersedes stale facts so recall returns only the latest value. Saturation harness (2000-write synthetic stream): **41.8% duplicate rows dropped, 100% latest-value retrieval**. | Engine-level, opt-in |
+| **Anti-saturation** | Write-time **dedup** (embedding-only, no LLM) bounds store growth; **contradiction soft-update** (one cheap arbiter call) supersedes stale facts so recall returns only the latest value. Saturation harness (2000-write synthetic stream): **41.8% duplicate rows dropped, 100% latest-value retrieval**. | Engine-level, opt-in |
 
-See [`docs/L6_Decades_Scale.md`](https://github.com/fernsdavid25/cortex-protocol/blob/main/docs/L6_Decades_Scale.md)
+See [`docs/decades-scale.md`](https://github.com/fernsdavid25/cortex-protocol/blob/main/docs/decades-scale.md)
 for the decades-scale retrieval analysis (self-host SQLite recall is O(n): measured ~95 ms @ 1k
 memories → ~7.7 s p50 @ 50k).
 

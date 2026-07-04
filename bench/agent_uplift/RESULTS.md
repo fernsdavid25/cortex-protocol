@@ -1,4 +1,4 @@
-# Agent-uplift eval — results (L7)
+# Agent-uplift eval — results
 
 Does Cortex memory actually make an agent *better*, or is it just a retrieval benchmark? This eval
 answers that directly: it runs the SAME multi-session tasks three ways and grades them

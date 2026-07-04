@@ -35,7 +35,7 @@ theme:
 nav:
   - Home: index.md
   - Architecture: ARCHITECTURE.md
-  - Decades-scale: L6_Decades_Scale.md
+  - Decades-scale: decades-scale.md
   - API reference: api.md
 
 plugins:
@@ -64,7 +64,7 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.inlinehilite
 
-# The prose docs (ARCHITECTURE.md, L6_Decades_Scale.md) deliberately link out to source files
+# The prose docs (ARCHITECTURE.md, decades-scale.md) deliberately link out to source files
 # under ../server/*.py and to ../ROADMAP.md / ../.env.example — those live in the repo but are
 # not part of the built site, so a --strict build must not fail over them. Nav wiring and
 # mkdocstrings import/reference errors still hard-fail the build.

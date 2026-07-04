@@ -1,4 +1,4 @@
-# L6 — Decades-Scale Retrieval
+# Decades-Scale Retrieval
 
 How Cortex recall scales from a personal SQLite store (thousands of memories) to a
 decades-long, multi-user hosted store (10^5–10^7+ memories). This is a design + measurement
@@ -18,7 +18,7 @@ rows, unpacks each float32 blob, and materialises a fresh `InMemoryStore` **on e
 So each recall is **O(n)** in both I/O (blob unpack) and CPU (n×dim cosine + n-doc BM25), with no
 caching between calls.
 
-The same honesty applies to **memorize** once the L5 anti-saturation layer is enabled: with
+The same honesty applies to **memorize** once the anti-saturation layer is enabled: with
 `use_dedup` or `use_soft_update` on, each write first runs `_related_memories` (`server/cortex/memory.py`),
 which calls the very same `build_index(user_id)` + dense scan — so every memorize also becomes an
 **O(n) full-store scan** (plus, in the soft-update band, one cheap arbiter call). With both flags off

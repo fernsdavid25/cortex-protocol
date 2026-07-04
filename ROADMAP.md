@@ -40,12 +40,12 @@ Cortex numbers are graded by a Gemini judge (disclosed); the canonical LongMemEv
   guard, bounded short-id deletion, and graceful shutdown.
 - **Additive, opt-in enrichment layers** — each write-time only, so **recall stays byte-identical**
   and the accuracy-per-dollar guarantee holds:
-  - **Episodic memory (L4)** — one cheap extraction per `memorize` structures event_time / actor /
+  - **Episodic memory** — one cheap extraction per `memorize` structures event_time / actor /
     location / event_type, powering a timeline read.
-  - **Entity graph (G2) + `recall_about`** — the same extraction folds entities and labeled,
+  - **Entity graph + `recall_about`** — the same extraction folds entities and labeled,
     directed relationships into an ego knowledge graph rooted at a synthetic `self`, powering an
     exhaustive per-entity dossier.
-  - **Anti-saturation (L5)** — embedding-only write-time dedup bounds store growth; a cheap
+  - **Anti-saturation** — embedding-only write-time dedup bounds store growth; a cheap
     contradiction arbiter supersedes stale facts so recall returns only the latest value.
 - **Benchmark harness** (`bench/cortex_bench/`): LongMemEval + LoCoMo with per-type accuracy,
   abstention, recall@k, and per-question cost accounting; an offline embedding cache; provider
@@ -68,7 +68,7 @@ Cortex numbers are graded by a Gemini judge (disclosed); the canonical LongMemEv
 
 - **ANN vector index (pgvector / HNSW)** replacing brute-force cosine, so recall stays fast from
   thousands → millions of memories. (Today's flat rebuild-per-query is fine at personal scale;
-  measured self-host SQLite recall is O(n) — see `docs/L6_Decades_Scale.md`.)
+  measured self-host SQLite recall is O(n) — see `docs/decades-scale.md`.)
 - **Cross-encoder reranker** over the fused candidates — already an *injected, optional* engine hook
   (`Reranker`), gated on a benchmark before it becomes a default.
 

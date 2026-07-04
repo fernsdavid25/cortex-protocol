@@ -30,7 +30,7 @@ climb but holds perfectly at 3.5× lower cost.
 Net: **equal-or-better accuracy at ~3× lower cost on both benchmarks** — a clear accuracy-per-dollar
 win, and the LoCoMo +1pt clears the L2 gate. Caveats: (1) the +1pt on n=100 is a 1-question margin —
 the robust wins are the cost reduction + recall preservation; full-1986 / full-500 confirmation is
-part of the L9 flagship campaign. (2) It requires GCP Discovery Engine creds (a service account), so
+part of the flagship campaign. (2) It requires GCP Discovery Engine creds (a service account), so
 it is a hosted/flagship feature — pure-BYOK self-host falls back gracefully to no rerank. (3) The
 adversarial −4.8pt is the fewer-context tradeoff (the A2 gate that would recover it was itself killed).
 

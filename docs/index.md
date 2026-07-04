@@ -43,7 +43,7 @@ The stdio server exposes six agent-facing tools:
 - **[Architecture](ARCHITECTURE.md)** — a contributor-facing tour of the engine: the provider
   abstraction (BYOK), the persistent store, the hybrid retrieval core, and the opt-in
   write-time enrichment layers.
-- **[Decades-scale](L6_Decades_Scale.md)** — how recall scales from a personal SQLite store to a
+- **[Decades-scale](decades-scale.md)** — how recall scales from a personal SQLite store to a
   decades-long, multi-user hosted store (pgvector HNSW, AlloyDB ScaNN), with measured latency.
 - **[API reference](api.md)** — the `CortexMemory` engine and the `LLMProvider` contract for
   writing your own provider.
