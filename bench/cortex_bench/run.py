@@ -236,7 +236,10 @@ def run(
             if inst.question_id in done:
                 # Already completed by a prior run: skip the costly reader call.
                 row = done[inst.question_id]
-                hyp = row["hypothesis"]
+                # A done row can carry a verdict but no hypothesis key (hand-edited / older
+                # format): `_load_done` accepts it via ``"correct" in row``, so default the key
+                # rather than KeyError and abort the resumed run.
+                hyp = row.get("hypothesis", "")
                 stored = row.get("correct")
                 if stored is not None:
                     correct = stored  # reuse persisted verdict -> judge-free
@@ -531,7 +534,12 @@ def main(argv: list[str] | None = None) -> dict:
         resume=args.resume,
     )
     embed_model = args.embed_model or "gemini-embedding-001"
-    report = aggregate(records, reader_model=resolved["reader_model"], embed_model=embed_model)
+    report = aggregate(
+        records,
+        reader_model=resolved["reader_model"],
+        embed_model=embed_model,
+        system_name=system.name,
+    )
 
     (outdir / f"{tag}_results.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps(report, indent=2))

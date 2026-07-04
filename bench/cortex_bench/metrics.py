@@ -23,6 +23,17 @@ PRICES: dict[str, tuple[float, float]] = {
     "gemini-3.1-pro-preview": (2.0, 12.0),
 }
 
+# Reader models whose PRICES entry above is a code-labeled ESTIMATE (preview/unreleased pricing),
+# stamped as ``price_source: "estimated"`` into the report so a downstream $/question quote from
+# one of them is never mistaken for published ground truth.
+ESTIMATED_PRICE_MODELS: frozenset[str] = frozenset({"gemini-3.5-flash", "gemini-3.1-pro-preview"})
+
+# Systems that actually retrieve a SUBSET of sessions, for which recall@k is a real
+# retrieval-quality metric. For any other system (stubs, full-context) recall@k is trivial —
+# full-context returns every session (so recall is 1.0 by construction) and the stubs retrieve
+# nothing — so the report flags it rather than letting it read as a genuine retrieval score.
+RETRIEVAL_SYSTEMS: frozenset[str] = frozenset({"naive-rag", "cortex-v0"})
+
 
 @dataclass
 class Record:
@@ -59,6 +70,7 @@ def aggregate(
     records: list[Record],
     reader_model: str | None = None,
     embed_model: str | None = None,
+    system_name: str | None = None,
 ) -> dict:
     total = len(records)
 
@@ -103,8 +115,26 @@ def aggregate(
     # Only surface measured_n on a resumed run, so ordinary runs keep an unchanged report shape.
     if mtotal != total:
         report["measured_n"] = mtotal
+    # Flag recall@k as trivial for non-retrieval systems (full-context reads everything ->
+    # recall is 1.0 by construction; stubs retrieve nothing) so it isn't read as a real metric.
+    # Only stamped when a system_name is supplied AND a recall was computed, so callers that
+    # don't pass it (unit tests) keep the legacy report shape.
+    if (
+        system_name is not None
+        and system_name not in RETRIEVAL_SYSTEMS
+        and report["recall_at_k"] is not None
+    ):
+        report["recall_at_k_note"] = (
+            f"trivial: {system_name} does not retrieve a subset (reads full context); "
+            "recall@k is not a retrieval-quality metric here"
+        )
     if reader_model in PRICES and mtotal:
         pin, pout = PRICES[reader_model]
+        # Stamp whether the reader's price is published or a code-labeled ESTIMATE, so a
+        # downstream $/question is never quoted from preview pricing as if it were ground truth.
+        report["price_source"] = (
+            "estimated" if reader_model in ESTIMATED_PRICE_MODELS else "published"
+        )
         # Reader-only cost (input+output at the reader rate), kept for reference.
         reader_cost = (sum(in_toks) * pin + sum(out_toks) * pout) / 1e6
         report["usd_per_question_reader"] = round(reader_cost / mtotal, 6)
