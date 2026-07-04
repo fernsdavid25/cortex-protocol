@@ -488,6 +488,19 @@ def _opt_str(value: object) -> str | None:
     return None
 
 
+# An extracted event_time must be an absolute ISO-8601 calendar date (YYYY-MM-DD) — the timeline
+# is ordered by a plain lexical sort on this string, so any other shape ("2024", "March 3rd",
+# "2024-3-3", a timestamp) would sort wrongly. Anything that fails this anchored match falls back
+# to the ingest date, keeping the sort invariant intact.
+_ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _valid_iso_date(value: object) -> str | None:
+    """Return a normalised ``YYYY-MM-DD`` string iff ``value`` is a valid ISO date, else None."""
+    s = _opt_str(value)
+    return s if s and _ISO_DATE_RE.match(s) else None
+
+
 def parse_episodic_extraction(text: str, fallback_event_time: str) -> dict[str, str | None]:
     """Parse an episodic-extraction response into ``{event_time, actor, location, event_type}``.
 
@@ -508,7 +521,7 @@ def parse_episodic_extraction(text: str, fallback_event_time: str) -> dict[str, 
     if obj is None:
         return fallback
     return {
-        "event_time": _opt_str(obj.get("event_time")) or fallback_event_time,
+        "event_time": _valid_iso_date(obj.get("event_time")) or fallback_event_time,
         "actor": _opt_str(obj.get("actor")),
         "location": _opt_str(obj.get("location")),
         "event_type": _opt_str(obj.get("event_type")),
@@ -781,7 +794,10 @@ def parse_transfer_extraction(text: str, max_facts: int = 200) -> list[tuple[str
                 out.append((content, kind))
     else:  # fallback: treat each substantial line as a standalone memory (skip model meta-prose)
         for line in text.splitlines():
-            stripped = line.strip().lstrip("-*0123456789. ").strip()
+            # Strip ONLY a real leading list/ordinal marker ("- ", "* ", "• ", "1. ", "2) ") — an
+            # anchored match so content that merely starts with a digit ("401k", "3D", "2024 …") is
+            # preserved, unlike a greedy ``lstrip`` of the marker characters.
+            stripped = re.sub(r"^\s*(?:[-*•]|\d+[.)])\s+", "", line).strip()
             if len(stripped) > 10 and not _looks_like_refusal(stripped):
                 out.append((stripped, None))
     return out[: max(0, max_facts)]
