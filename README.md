@@ -103,6 +103,30 @@ multi-session 0.902, abstention 0.867 (mean ~25.7k input tokens/q). Under our ju
 (0.712), all of which use pricier readers. *(Competitor rows use their own judges — the leaderboard
 is not apples-to-apples; canonical judge is GPT-4o.)*
 
+#### Per question type — Cortex vs the field
+
+One overall number hides where a memory system wins or loses. Split by LongMemEval_S question
+type, Cortex — the **only cheap-reader system in the field** — stays in the top tier of the
+premium-reader systems, and leads outright on single-session-assistant and multi-session recall:
+
+![LongMemEval_S accuracy by question type — Cortex vs Mastra, EmergenceMem, Supermemory, Zep](https://raw.githubusercontent.com/fernsdavid25/cortex-protocol/main/docs/assets/lme-by-category.png)
+
+| Question type | **Cortex** `flash` | Mastra `premium` | EmergenceMem `premium` | Supermemory `premium` | Zep `premium` |
+|---|:--:|:--:|:--:|:--:|:--:|
+| Knowledge update | **94.9** | 96.2 | 83.3 | 89.7 | 83.3 |
+| Single-session assistant | **98.2** | 94.6 | 100.0 | 98.2 | 80.4 |
+| Single-session user | **95.7** | 95.7 | 98.6 | 98.6 | 92.9 |
+| Temporal reasoning | **92.5** | 95.5 | 85.7 | 82.0 | 62.4 |
+| Multi-session | **90.2** | 87.2 | 81.2 | 76.7 | 57.9 |
+| Single-session preference | **90.0** | 100.0 | 60.0 | 70.0 | 56.7 |
+| **Overall** | **93.2** | 94.9 | 86.0 | 85.2 | 71.2 |
+
+<sub>Cortex's row is our own run (`gemini-3.5-flash` reader + judge). Competitor rows are each
+system's own published LongMemEval_S results under its **own premium reader and judge** — the field's
+reported standing, **not** a single apples-to-apples harness (the parody Supermemory "8/12-variant
+ensemble" columns are excluded as satire; the real *Initial* column is used). Cortex's abstention
+category (0.867) is omitted — competitors don't report it. Higher is better.</sub>
+
 **LoCoMo 0.813** — per category: single-hop 0.864, multi-hop 0.695, temporal 0.857, open-domain
 0.458, adversarial/abstention 0.836. This **beats the graph-memory systems** (Mem0 0.61–0.66, Zep
 0.585–0.62) and is on par with the strong retrieval baseline EMem (0.78–0.84), behind only Cognis

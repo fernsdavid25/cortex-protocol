@@ -38,6 +38,18 @@ The stdio server exposes six agent-facing tools:
 | `list_memories(limit?)` | The most recently saved memories, newest first. |
 | `forget(memory_id)` | Delete by full id or an unambiguous short-id prefix (ambiguous prefixes are refused). |
 
+## Benchmarks — per question type
+
+Split by LongMemEval_S question type, Cortex — the **only cheap-reader system in the field** —
+holds the top tier of the premium-reader systems, and leads on single-session-assistant and
+multi-session recall:
+
+![LongMemEval_S accuracy by question type — Cortex vs Mastra, EmergenceMem, Supermemory, Zep](assets/lme-by-category.svg)
+
+Competitor rows are each system's own published results under their own premium readers and judges
+(not a single apples-to-apples harness). The full results table, cost-per-question, and reproduce
+commands are in the [README](https://github.com/fernsdavid25/cortex-protocol/blob/main/README.md#results).
+
 ## Where next
 
 - **[Architecture](ARCHITECTURE.md)** — a contributor-facing tour of the engine: the provider

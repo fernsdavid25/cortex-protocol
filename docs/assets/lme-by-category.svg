@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="898" viewBox="0 0 920 898" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif">
+<rect x="0.5" y="0.5" width="919" height="897" rx="18" fill="#0d0d0d" stroke="rgba(255,255,255,0.08)"/>
+<text x="32" y="46" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="21" font-weight="600" fill="#ffffff">LongMemEval_S &#8212; accuracy by question type</text>
+<text x="32" y="70" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="12.5" fill="#8a8880">Cortex reads with a cheap flash model. Every other system here reads with a premium model.</text>
+<rect x="32" y="91" width="11" height="11" rx="2.5" fill="#9085e9"/>
+<text x="49" y="100" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="12.5" font-weight="600" fill="#ffffff">Cortex</text>
+<rect x="117.6" y="91" width="11" height="11" rx="2.5" fill="#c98500" opacity="0.85"/>
+<text x="134.6" y="100" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="12.5" font-weight="400" fill="#c3c2b7">Mastra</text>
+<rect x="203.2" y="91" width="11" height="11" rx="2.5" fill="#199e70" opacity="0.85"/>
+<text x="220.2" y="100" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="12.5" font-weight="400" fill="#c3c2b7">EmergenceMem</text>
+<rect x="331.4" y="91" width="11" height="11" rx="2.5" fill="#d95926" opacity="0.85"/>
+<text x="348.4" y="100" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="12.5" font-weight="400" fill="#c3c2b7">Supermemory</text>
+<rect x="452.5" y="91" width="11" height="11" rx="2.5" fill="#d55181" opacity="0.85"/>
+<text x="469.5" y="100" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="12.5" font-weight="400" fill="#c3c2b7">Zep</text>
+<text x="32" y="144" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="13" font-weight="600" fill="#e8e8e6">Knowledge update</text>
+<rect x="24" y="149" width="872" height="14" rx="6" fill="rgba(144,133,233,0.08)"/>
+<text x="32" y="156" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#c3c2b7">Cortex</text>
+<rect x="162" y="152" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="152" width="643.4" height="8" rx="4" fill="#9085e9"/>
+<text x="888" y="156" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#ffffff">94.9</text>
+<text x="32" y="170" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Mastra</text>
+<rect x="162" y="166" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="166" width="652.2" height="8" rx="4" fill="#c98500" opacity="0.85"/>
+<text x="888" y="170" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">96.2</text>
+<text x="32" y="184" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">EmergenceMem</text>
+<rect x="162" y="180" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="180" width="565.0" height="8" rx="4" fill="#199e70" opacity="0.85"/>
+<text x="888" y="184" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">83.3</text>
+<text x="32" y="198" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Supermemory</text>
+<rect x="162" y="194" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="194" width="608.4" height="8" rx="4" fill="#d95926" opacity="0.85"/>
+<text x="888" y="198" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">89.7</text>
+<text x="32" y="212" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Zep</text>
+<rect x="162" y="208" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="208" width="564.8" height="8" rx="4" fill="#d55181" opacity="0.85"/>
+<text x="888" y="212" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">83.3</text>
+<text x="32" y="246" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="13" font-weight="600" fill="#e8e8e6">Single-session assistant</text>
+<rect x="24" y="251" width="872" height="14" rx="6" fill="rgba(144,133,233,0.08)"/>
+<text x="32" y="258" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#c3c2b7">Cortex</text>
+<rect x="162" y="254" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="254" width="665.8" height="8" rx="4" fill="#9085e9"/>
+<text x="888" y="258" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#ffffff">98.2</text>
+<text x="32" y="272" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Mastra</text>
+<rect x="162" y="268" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="268" width="641.4" height="8" rx="4" fill="#c98500" opacity="0.85"/>
+<text x="888" y="272" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">94.6</text>
+<text x="32" y="286" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">EmergenceMem</text>
+<rect x="162" y="282" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="282" width="678.0" height="8" rx="4" fill="#199e70" opacity="0.85"/>
+<text x="888" y="286" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">100.0</text>
+<text x="32" y="300" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Supermemory</text>
+<rect x="162" y="296" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="296" width="665.9" height="8" rx="4" fill="#d95926" opacity="0.85"/>
+<text x="888" y="300" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">98.2</text>
+<text x="32" y="314" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Zep</text>
+<rect x="162" y="310" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="310" width="545.1" height="8" rx="4" fill="#d55181" opacity="0.85"/>
+<text x="888" y="314" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">80.4</text>
+<text x="32" y="348" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="13" font-weight="600" fill="#e8e8e6">Single-session user</text>
+<rect x="24" y="353" width="872" height="14" rx="6" fill="rgba(144,133,233,0.08)"/>
+<text x="32" y="360" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#c3c2b7">Cortex</text>
+<rect x="162" y="356" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="356" width="648.8" height="8" rx="4" fill="#9085e9"/>
+<text x="888" y="360" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#ffffff">95.7</text>
+<text x="32" y="374" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Mastra</text>
+<rect x="162" y="370" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="370" width="648.8" height="8" rx="4" fill="#c98500" opacity="0.85"/>
+<text x="888" y="374" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">95.7</text>
+<text x="32" y="388" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">EmergenceMem</text>
+<rect x="162" y="384" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="384" width="668.3" height="8" rx="4" fill="#199e70" opacity="0.85"/>
+<text x="888" y="388" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">98.6</text>
+<text x="32" y="402" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Supermemory</text>
+<rect x="162" y="398" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="398" width="668.3" height="8" rx="4" fill="#d95926" opacity="0.85"/>
+<text x="888" y="402" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">98.6</text>
+<text x="32" y="416" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Zep</text>
+<rect x="162" y="412" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="412" width="629.9" height="8" rx="4" fill="#d55181" opacity="0.85"/>
+<text x="888" y="416" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">92.9</text>
+<text x="32" y="450" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="13" font-weight="600" fill="#e8e8e6">Temporal reasoning</text>
+<rect x="24" y="455" width="872" height="14" rx="6" fill="rgba(144,133,233,0.08)"/>
+<text x="32" y="462" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#c3c2b7">Cortex</text>
+<rect x="162" y="458" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="458" width="627.1" height="8" rx="4" fill="#9085e9"/>
+<text x="888" y="462" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#ffffff">92.5</text>
+<text x="32" y="476" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Mastra</text>
+<rect x="162" y="472" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="472" width="647.5" height="8" rx="4" fill="#c98500" opacity="0.85"/>
+<text x="888" y="476" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">95.5</text>
+<text x="32" y="490" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">EmergenceMem</text>
+<rect x="162" y="486" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="486" width="581.1" height="8" rx="4" fill="#199e70" opacity="0.85"/>
+<text x="888" y="490" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">85.7</text>
+<text x="32" y="504" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Supermemory</text>
+<rect x="162" y="500" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="500" width="555.6" height="8" rx="4" fill="#d95926" opacity="0.85"/>
+<text x="888" y="504" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">82.0</text>
+<text x="32" y="518" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Zep</text>
+<rect x="162" y="514" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="514" width="423.1" height="8" rx="4" fill="#d55181" opacity="0.85"/>
+<text x="888" y="518" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">62.4</text>
+<text x="32" y="552" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="13" font-weight="600" fill="#e8e8e6">Multi-session</text>
+<rect x="24" y="557" width="872" height="14" rx="6" fill="rgba(144,133,233,0.08)"/>
+<text x="32" y="564" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#c3c2b7">Cortex</text>
+<rect x="162" y="560" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="560" width="611.6" height="8" rx="4" fill="#9085e9"/>
+<text x="888" y="564" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#ffffff">90.2</text>
+<text x="32" y="578" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Mastra</text>
+<rect x="162" y="574" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="574" width="591.2" height="8" rx="4" fill="#c98500" opacity="0.85"/>
+<text x="888" y="578" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">87.2</text>
+<text x="32" y="592" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">EmergenceMem</text>
+<rect x="162" y="588" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="588" width="550.5" height="8" rx="4" fill="#199e70" opacity="0.85"/>
+<text x="888" y="592" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">81.2</text>
+<text x="32" y="606" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Supermemory</text>
+<rect x="162" y="602" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="602" width="520.0" height="8" rx="4" fill="#d95926" opacity="0.85"/>
+<text x="888" y="606" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">76.7</text>
+<text x="32" y="620" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Zep</text>
+<rect x="162" y="616" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="616" width="392.6" height="8" rx="4" fill="#d55181" opacity="0.85"/>
+<text x="888" y="620" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">57.9</text>
+<text x="32" y="654" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="13" font-weight="600" fill="#e8e8e6">Single-session preference</text>
+<rect x="24" y="659" width="872" height="14" rx="6" fill="rgba(144,133,233,0.08)"/>
+<text x="32" y="666" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#c3c2b7">Cortex</text>
+<rect x="162" y="662" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="662" width="610.2" height="8" rx="4" fill="#9085e9"/>
+<text x="888" y="666" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#ffffff">90.0</text>
+<text x="32" y="680" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Mastra</text>
+<rect x="162" y="676" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="676" width="678.0" height="8" rx="4" fill="#c98500" opacity="0.85"/>
+<text x="888" y="680" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">100.0</text>
+<text x="32" y="694" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">EmergenceMem</text>
+<rect x="162" y="690" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="690" width="406.8" height="8" rx="4" fill="#199e70" opacity="0.85"/>
+<text x="888" y="694" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">60.0</text>
+<text x="32" y="708" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Supermemory</text>
+<rect x="162" y="704" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="704" width="474.6" height="8" rx="4" fill="#d95926" opacity="0.85"/>
+<text x="888" y="708" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">70.0</text>
+<text x="32" y="722" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Zep</text>
+<rect x="162" y="718" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="718" width="384.4" height="8" rx="4" fill="#d55181" opacity="0.85"/>
+<text x="888" y="722" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">56.7</text>
+<line x1="32" y1="738" x2="888" y2="738" stroke="rgba(255,255,255,0.09)"/>
+<text x="32" y="762" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="13" font-weight="600" fill="#ffffff">Overall</text>
+<rect x="24" y="767" width="872" height="14" rx="6" fill="rgba(144,133,233,0.08)"/>
+<text x="32" y="774" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#c3c2b7">Cortex</text>
+<rect x="162" y="770" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="770" width="631.9" height="8" rx="4" fill="#9085e9"/>
+<text x="888" y="774" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#ffffff">93.2</text>
+<text x="32" y="788" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Mastra</text>
+<rect x="162" y="784" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="784" width="643.2" height="8" rx="4" fill="#c98500" opacity="0.85"/>
+<text x="888" y="788" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">94.9</text>
+<text x="32" y="802" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">EmergenceMem</text>
+<rect x="162" y="798" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="798" width="583.1" height="8" rx="4" fill="#199e70" opacity="0.85"/>
+<text x="888" y="802" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">86.0</text>
+<text x="32" y="816" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Supermemory</text>
+<rect x="162" y="812" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="812" width="577.7" height="8" rx="4" fill="#d95926" opacity="0.85"/>
+<text x="888" y="816" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">85.2</text>
+<text x="32" y="830" dominant-baseline="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="11" fill="#8a8880">Zep</text>
+<rect x="162" y="826" width="678" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+<rect x="162" y="826" width="482.7" height="8" rx="4" fill="#d55181" opacity="0.85"/>
+<text x="888" y="830" dominant-baseline="middle" text-anchor="end" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8a8880">71.2</text>
+<text x="32" y="862" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="10.5" fill="#6f6d67">Cortex: our own runs (gemini-3.5-flash reader + judge). Competitors: each system&#8217;s own published LongMemEval_S results under its own premium</text>
+<text x="32" y="877" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif" font-size="10.5" fill="#6f6d67">reader and judge &#8212; the field&#8217;s reported standing, not a single apples-to-apples harness. Bars start at 0; higher is better.</text>
+</svg>
