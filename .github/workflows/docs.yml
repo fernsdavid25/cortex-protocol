@@ -3,7 +3,17 @@ name: Docs
 on:
   push:
     branches: [main]
-  # Allow a manual rebuild from the Actions tab.
+    # Only rebuild when something the rendered site actually depends on changes — the docs
+    # content, the mkdocs config, the README, the code the API reference is generated from, or
+    # the examples. A CI/packaging-only change no longer triggers a (flaky) Pages redeploy.
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "README.md"
+      - "server/cortex/**"
+      - "examples/**"
+      - ".github/workflows/docs.yml"
+  # Allow a manual rebuild from the Actions tab (ignores the paths filter).
   workflow_dispatch:
 
 # GitHub Pages deploy needs pages:write + id-token:write; everything else is read-only.
