@@ -35,6 +35,7 @@ theme:
 nav:
   - Home: index.md
   - Architecture: ARCHITECTURE.md
+  - Agent skill: agent-skill.md
   - Decades-scale: decades-scale.md
   - API reference: api.md
 
@@ -63,6 +64,11 @@ markdown_extensions:
       anchor_linenums: true
   - pymdownx.superfences
   - pymdownx.inlinehilite
+  # snippets lets docs pages embed repo files verbatim (agent-skill.md embeds
+  # skills/using-cortex-memory/SKILL.md so the skill has ONE canonical copy).
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
 
 # The prose docs (ARCHITECTURE.md, decades-scale.md) deliberately link out to source files
 # under ../server/*.py and to ../ROADMAP.md / ../.env.example — those live in the repo but are

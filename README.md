@@ -227,7 +227,7 @@ Restart the client. That exposes six tools (the last two are gated on opt-in mem
 | `list_memories(limit?)` | List the most recent memories. |
 | `forget(memory_id)` | Delete a memory (a short id prefix works if unambiguous). |
 | `recall_about(entity, limit?)` | Exhaustive dossier for one entity — a person, place, project, org, thing, or yourself — every relationship plus every memory attached to it. A pure keyed read, no LLM/embedding call. **Requires `CORTEX_GRAPH=1`.** |
-| `recall_timeline(query?, limit?)` | Dated event timeline — memories ordered by their extracted `event_time` (for "what happened when" questions). A pure keyed read, no LLM/embedding call. **Requires `CORTEX_EPISODIC=1`.** |
+| `recall_timeline(since?, until?, limit?)` | Dated event timeline — memories ordered by their extracted `event_time` (for "what happened when" questions), optionally bounded by ISO dates. A pure keyed read, no LLM/embedding call. **Requires `CORTEX_EPISODIC=1`.** |
 
 **From a checkout** (before the package is on PyPI): `python -m cortex.mcp.server`, or in the client
 config use `"command": "uv", "args": ["run", "--with", "fastmcp", "python", "-m", "cortex.mcp.server"]`.
@@ -247,6 +247,22 @@ byte-identical**, so the accuracy-per-dollar guarantee is unchanged. See
 **Claude Desktop one-click:** build the `.mcpb` bundle and drag it onto Desktop — it prompts for your
 Gemini key and runs the same six tools. See
 [`packaging/mcpb/`](https://github.com/fernsdavid25/cortex-protocol/tree/main/packaging/mcpb).
+
+## Teach your agent to use Cortex well
+
+Connecting the server gives your agent the *tools*; the **Cortex agent skill** gives it the
+*craft* — which tool answers which kind of question, how to phrase memories so the entity graph
+and timeline actually build, and when to recall instead of re-asking you. One file, works in any
+client (Claude Code skill, Cursor rules, or pasted instructions):
+
+```bash
+mkdir -p ~/.claude/skills/using-cortex-memory
+curl -fsSL https://raw.githubusercontent.com/fernsdavid25/cortex-protocol/main/skills/using-cortex-memory/SKILL.md \
+  -o ~/.claude/skills/using-cortex-memory/SKILL.md
+```
+
+Canonical file: [`skills/using-cortex-memory/SKILL.md`](https://github.com/fernsdavid25/cortex-protocol/blob/main/skills/using-cortex-memory/SKILL.md)
+· rendered: [docs → Agent skill](https://fernsdavid25.github.io/cortex-protocol/agent-skill/).
 
 ## Security & privacy
 
