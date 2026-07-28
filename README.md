@@ -32,31 +32,76 @@ so recall stays byte-identical whether they are on or off (grounded in
 [`docs/ARCHITECTURE.md`](https://github.com/fernsdavid25/cortex-protocol/blob/main/docs/ARCHITECTURE.md)).
 
 ```mermaid
-flowchart TD
-    subgraph WRITE["memorize(content) · write path"]
-        direction TB
-        A["content"] --> B["provider.embed (BYOK)"]
-        B --> C[("SQLiteStore.add")]
-        C -.->|"opt-in, write-time only"| D["episodic memory<br/>entity graph<br/>anti-saturation"]
-    end
-    subgraph READ["recall(query) · read path — no server-side LLM"]
-        direction TB
-        E["query"] --> F["provider.embed (BYOK)"]
-        F --> G["SQLiteStore.build_index"]
-        G --> H["hybrid_retrieve: dense + BM25 → RRF"]
-        H --> I["ranked raw memories → your agent reasons"]
-    end
-    C ==>|"persist"| G
+flowchart TB
+    classDef write fill:#1e3a5f,stroke:#3b82f6,stroke-width:1px,color:#e8f0fe
+    classDef read fill:#1a3d2e,stroke:#22c55e,stroke-width:1px,color:#e6f7ee
+    classDef store fill:#2d2a3e,stroke:#a78bfa,stroke-width:1px,color:#f0ecff
+    classDef optin fill:#3d3320,stroke:#f59e0b,stroke-width:1px,stroke-dasharray:4 3,color:#fef3c7
+    classDef agent fill:#111,stroke:#666,stroke-width:1px,color:#eee
+
+    W0["<b>memorize(content)</b>"]:::write
+    W1["embed once · your key"]:::write
+    W2["persist row + vector"]:::write
+    WX["<b>opt-in</b> · 1 flash-lite call<br/>episodic · entity graph · dedup"]:::optin
+
+    DB[("SQLite<br/><code>~/.cortex/memory.db</code>")]:::store
+
+    R0["<b>recall(query)</b>"]:::read
+    R1["embed once · your key"]:::read
+    R2["hybrid retrieve<br/>dense + BM25 → RRF"]:::read
+    R3["ranked raw memories"]:::read
+    AG["<b>your agent</b> does the reasoning"]:::agent
+
+    W0 --> W1 --> W2 --> DB
+    W2 -.->|"write time only"| WX
+    R0 --> R1 --> R2 --> R3 ==> AG
+    DB --> R2
+
+    linkStyle 0,1,2 stroke:#3b82f6
+    linkStyle 4,5,6,7 stroke:#22c55e
+```
+
+**The invariant:** every enrichment layer runs at **write** time. Turning them on changes what is
+*stored*, never what `recall` *does* — so the published per-recall cost holds no matter how many
+layers you enable. `recall` is one embedding call plus local search, and returns raw memories.
+**No LLM ever runs on the read path.**
+
+### Inside `hybrid_retrieve`
+
+Dense and lexical retrieval fail in different ways: embeddings miss rare exact tokens (names, IDs,
+dates), BM25 misses paraphrase. Reciprocal Rank Fusion combines them **without score
+normalization** — each list votes by *rank*, so a memory both retrievers like beats one only a
+single retriever likes ([Cormack et al., 2009](https://dl.acm.org/doi/10.1145/1571941.1572114)).
+
+```mermaid
+flowchart LR
+    classDef q fill:#111,stroke:#666,color:#eee
+    classDef ret fill:#1a3d2e,stroke:#22c55e,color:#e6f7ee
+    classDef fuse fill:#2d2a3e,stroke:#a78bfa,color:#f0ecff
+    classDef out fill:#1e3a5f,stroke:#3b82f6,color:#e8f0fe
+
+    Q["query"]:::q
+    E["embed once"]:::q
+    D["<b>dense</b><br/>cosine over vectors<br/><i>catches paraphrase</i>"]:::ret
+    L["<b>lexical</b><br/>Okapi BM25<br/><i>catches exact tokens</i>"]:::ret
+    F{"<b>RRF</b><br/>k=60<br/>rank-vote fusion"}:::fuse
+    O["top-k memories"]:::out
+
+    Q --> E --> D
+    Q --> L
+    D -->|"4 × top_k pool"| F
+    L -->|"4 × top_k pool"| F
+    F --> O
 ```
 
 ## Why Cortex
 
 - **User-owned, not company-owned.** *You* decide which agents see your memory — versus incumbents
   where the business owns it. One memory, every agent.
-- **Cost-efficient tier, with the cost published.** Cortex is the only memory system publishing
-  $/question, and the only one at 0.9+ on LongMemEval_S with a cost-efficient-tier reader — a
-  **Gemini Flash reader** at ~$0.0396/question on LongMemEval_S (~$0.0034 on LoCoMo).† It targets
-  accuracy *per dollar*, not raw accuracy at any cost.
+- **The cost is published.** ~$0.0396/question on LongMemEval_S, ~$0.0034 on LoCoMo† — measured
+  token counts at Google's confirmed list prices. No other memory system publishes a $/question at
+  all, so there is nothing to compare it against yet. It targets accuracy *per dollar*, not raw
+  accuracy at any cost.
 - **Run anywhere, no operator cost.** Self-host is a single SQLite file — no Docker, no DB server.
   One config snippet wires it into any MCP client.
 
@@ -68,7 +113,7 @@ LoCoMo. What is distinct is the cost side — Cortex is the only memory system p
 $/question, and the only one at 0.9+ on LongMemEval_S with a cost-efficient-tier reader. No
 competitor's $/question has been measured, by us or by them, so no cost comparison is claimed.
 
-| Benchmark | Cortex | Raw rank | Reader (cost†) | Retrieval recall@k |
+| Benchmark | Cortex | Raw rank | Reader (cost†) | Recall@k (session-level‡) |
 |---|---|---|---|---|
 | **LongMemEval_S** (500 q) | **0.932** | #2 raw | `gemini-3.5-flash`, top_k=50, preference-mode, answer-first · **~$0.0396/q** | 0.998 |
 | **LoCoMo** (1986 q) | **0.813** | #3 raw | `gemini-2.5-flash`, top_k=100, answer-first · **~$0.0034/q** | 0.998 |
@@ -77,6 +122,16 @@ competitor's $/question has been measured, by us or by them, so no cost comparis
 LongMemEval_S; 10,468.4 in / 92.9 out on LoCoMo) at Google's **confirmed list prices** for the
 reader model — `gemini-3.5-flash` at $1.50/$9.00 per 1M input/output tokens, `gemini-2.5-flash` at
 $0.30/$2.50 (see `bench/cortex_bench/metrics.py`).</sub>
+
+> **‡ Read this recall number the narrow way.** It is **session-level**: it scores a hit when the
+> retrieved set contains the *session* holding the gold evidence. On LongMemEval that is the
+> dataset's own gold granularity, so 0.998 is measured against exactly what the benchmark defines.
+> On LoCoMo the dataset ships **turn-level** evidence (`"D1:3"` = session 1, turn 3) and
+> [`bench/cortex_bench/locomo.py`](https://github.com/fernsdavid25/cortex-protocol/blob/main/bench/cortex_bench/locomo.py)
+> currently keys on the session and discards the turn — so the LoCoMo figure answers the easier
+> question. Measured turn-level full-evidence coverage on LoCoMo is **0.915 at k=100** and
+> **0.639 at k=8**. A turn-level metric is landing in the harness; until it does, treat 0.998 as
+> "we surfaced the right conversation", not "we surfaced the right memory".
 
 #### The reader frontier — buy accuracy with dollars, not with a different memory system
 
@@ -88,10 +143,10 @@ is the trade the memory layer exposes, priced:
 | `gemini-2.5-flash` | 0.848 | **$0.0079** | $0.0093 |
 | `gemini-3.5-flash` | **0.932** | $0.0396 | $0.0425 |
 
-**+8.4 accuracy points for ~5× the reader cost, with the memory system held fixed.** Retrieval
-recall@k ≈ 1.0 in both arms, so the delta is reader capability, not retrieval — the memory layer
-has already found the evidence in both, and what you are buying with the extra dollars is the
-reading of it. Pick your point on that curve with `CORTEX_READER_MODEL`; nothing else changes.
+**+8.4 accuracy points for ~5× the reader cost, with the memory system held fixed.** Retrieval is
+byte-identical across the two arms — same index, same top-k, same fused ranking — so the delta is
+reader capability, not retrieval. Pick your point on that curve with `CORTEX_READER_MODEL`;
+nothing else changes.
 
 ### How Cortex compares (LongMemEval_S)
 
@@ -209,11 +264,11 @@ Full methodology + per-type tables:
 
 | Capability | What it does | Status |
 |---|---|---|
-| **Hybrid retrieval** | Dense (Gemini embeddings) + Okapi BM25, fused with Reciprocal Rank Fusion; deep top-k drives recall@k ≈ 1.0. | **On** (all paths) |
+| **Hybrid retrieval** | Dense (Gemini embeddings) + Okapi BM25, fused with Reciprocal Rank Fusion (`k=60`, unweighted); each retriever is asked for a `4 × top_k` candidate pool so fusion can promote what both agree on. Deep top-k drives session-level recall@k ≈ 0.998. | **On** (all paths) |
 | **Chain-of-Note reader** | The reader takes structured notes over the retrieved memories before answering, with **calibrated abstention** — it declines when no memory supports an answer instead of hallucinating. | **On** (benchmark path) |
 | **Episodic memory + `recall_timeline`** | One cheap `gemini-2.5-flash-lite` call per `memorize` structures event_time / actor / location, powering the `recall_timeline` tool. **Write-time cost only — recall is byte-identical**, so the published recall cost is unchanged. | Opt-in (`CORTEX_EPISODIC=1`) |
 | **Entity graph + `recall_about`** | At `memorize` time, entities and relationships are folded into the **same** cheap extraction call that does episodic. Builds an ego knowledge graph rooted at a synthetic `self` entity — typed nodes (person / place / org / project / thing) joined by labeled, directed relationships, each memory attached to the entity it's about — powering the `recall_about` tool. **Write-time cost only — recall stays byte-identical.** | Opt-in (`CORTEX_GRAPH=1`) |
-| **Anti-saturation** | Write-time **dedup** (embedding-only, no LLM) bounds store growth; **contradiction soft-update** (one cheap arbiter call) supersedes stale facts so recall returns only the latest value. Saturation harness (2000-write synthetic stream): **41.8% duplicate rows dropped, 100% latest-value retrieval**. | Engine-level, opt-in |
+| **Anti-saturation** | Write-time **dedup** (embedding-only, no LLM) bounds store growth; **contradiction soft-update** (one cheap arbiter call) writes a `supersessions` row so recall returns only the latest value. Implemented and unit-tested; **not yet measured at scale** — no saturation benchmark is published in this repo. | Engine-level, opt-in |
 
 See [`docs/decades-scale.md`](https://github.com/fernsdavid25/cortex-protocol/blob/main/docs/decades-scale.md)
 for the decades-scale retrieval analysis (self-host SQLite recall is O(n): measured ~95 ms @ 1k
@@ -259,8 +314,11 @@ Restart the client. That exposes six tools (the last two are gated on opt-in mem
 | `recall_about(entity, limit?)` | Exhaustive dossier for one entity — a person, place, project, org, thing, or yourself — every relationship plus every memory attached to it. A pure keyed read, no LLM/embedding call. **Requires `CORTEX_GRAPH=1`.** |
 | `recall_timeline(since?, until?, limit?)` | Dated event timeline — memories ordered by their extracted `event_time` (for "what happened when" questions), optionally bounded by ISO dates. A pure keyed read, no LLM/embedding call. **Requires `CORTEX_EPISODIC=1`.** |
 
-**From a checkout** (before the package is on PyPI): `python -m cortex.mcp.server`, or in the client
-config use `"command": "uv", "args": ["run", "--with", "fastmcp", "python", "-m", "cortex.mcp.server"]`.
+**From a checkout** (to run your own working copy instead of the published package):
+`python -m cortex.mcp.server`, or in the client config use
+`"command": "uv", "args": ["run", "--with", "fastmcp", "python", "-m", "cortex.mcp.server"]`.
+Note the `--from cortex-protocol` in the config above — a bare `uvx cortex-mcp` resolves to an
+unrelated package.
 
 **Config (env):** `GEMINI_API_KEY` / `GOOGLE_API_KEY` (required); optional `CORTEX_DB_PATH`,
 `CORTEX_USER_ID`, `CORTEX_EMBED_MODEL`, `CORTEX_EMBED_DIM`, `CORTEX_TOP_K` (default recall depth 5).
