@@ -131,7 +131,10 @@ def test_recall_not_flagged_for_retrieval_system_or_default():
 
 
 def test_price_source_stamped_estimated_vs_published():
-    assert aggregate([_rec()], reader_model="gemini-3.5-flash")["price_source"] == "estimated"
+    # Every rate in PRICES is confirmed against a published rate card, so every priced reader
+    # stamps "published". The "estimated" branch stays covered below for the next preview model.
+    assert aggregate([_rec()], reader_model="gemini-3.5-flash")["price_source"] == "published"
     assert aggregate([_rec()], reader_model="gemini-2.5-flash")["price_source"] == "published"
+    assert aggregate([_rec()], reader_model="gemini-3.1-pro-preview")["price_source"] == "published"
     # No priced reader -> no price_source key (nothing to caveat).
     assert "price_source" not in aggregate([_rec()])

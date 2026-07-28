@@ -55,11 +55,16 @@ Published to PyPI as [`cortex-protocol`](https://pypi.org/project/cortex-protoco
   question categories.
 
 ### Benchmark
-- **0.932 on the full LongMemEval_S (500 questions)** (~$0.008/query) and **0.813 on the full
+- **0.932 on the full LongMemEval_S (500 questions)** (~$0.0396/query) and **0.813 on the full
   LoCoMo (1986 questions)** (~$0.0034/query), both with a cheap Gemini reader under a Gemini judge
-  (LongMemEval cross-validated by an independent Claude-Opus panel). Positioning: **#1 on
-  accuracy-per-dollar** — raw #2 on LongMemEval (behind Mastra 0.949), raw #3 on LoCoMo; **not raw
-  SOTA**. The 0.894 → 0.932 LongMemEval gain came from the **A1 fix** (`--answer-first` +
+  (LongMemEval cross-validated by an independent Claude-Opus panel). Positioning: raw #2 on
+  LongMemEval (behind Mastra 0.949), raw #3 on LoCoMo; Cortex is the only memory system publishing
+  $/question, and the only one at 0.9+ on LongMemEval_S with a cost-efficient-tier reader. $/query
+  is computed from measured token counts at Google's confirmed list prices. On the same
+  LongMemEval_S retrieval, a `gemini-2.5-flash` reader scores 0.848 at ~$0.0079/query — the reader
+  frontier, priced. The headline run used the same
+  model family as both reader and judge, so a self-preference bias cannot be excluded and a
+  cross-family re-grade is planned. The 0.894 → 0.932 LongMemEval gain came from the **A1 fix** (`--answer-first` +
   `--max-output-tokens 8192`). See
   [`bench/results/PHASE3_authoritative.md`](bench/results/PHASE3_authoritative.md),
   [`bench/results/LOCOMO_results.md`](bench/results/LOCOMO_results.md), and

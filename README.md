@@ -16,8 +16,13 @@ Self-host it as a local stdio server — a single SQLite file, your own Gemini k
 phones home** — and `recall` does **no** server-side LLM generation, so the only runtime cost is your
 own embedding tokens.
 
-> **📊 0.932 LongMemEval_S · 0.813 LoCoMo — #1 on accuracy-per-dollar** — premium-tier retrieval
-> quality paired with a **cheap Gemini reader** at **~$0.008/question**, not raw accuracy at any cost.
+> **📊 0.932 LongMemEval_S · 0.813 LoCoMo** — the only memory system publishing $/question, and the
+> only one at 0.9+ on LongMemEval_S with a cost-efficient-tier reader: a **Gemini Flash reader** at
+> **~$0.0396/question** on LongMemEval_S and **~$0.0034/question** on LoCoMo.† Raw standing: **#2**
+> on LongMemEval_S (behind Mastra 0.949), **#3** on LoCoMo. Judge disclosure in [Results](#results).
+
+<sub>† Per-question cost is computed from measured token counts at Google's **confirmed list
+prices** (paid tier) for the reader model.</sub>
 
 ## Architecture
 
@@ -48,28 +53,51 @@ flowchart TD
 
 - **User-owned, not company-owned.** *You* decide which agents see your memory — versus incumbents
   where the business owns it. One memory, every agent.
-- **#1 on accuracy-per-dollar.** Cortex targets the best accuracy *per dollar*, not raw accuracy at
-  any cost: premium-tier retrieval quality with a **cheap Gemini reader** (~$0.008/question on
-  LongMemEval_S), with $/question published.
+- **Cost-efficient tier, with the cost published.** Cortex is the only memory system publishing
+  $/question, and the only one at 0.9+ on LongMemEval_S with a cost-efficient-tier reader — a
+  **Gemini Flash reader** at ~$0.0396/question on LongMemEval_S (~$0.0034 on LoCoMo).† It targets
+  accuracy *per dollar*, not raw accuracy at any cost.
 - **Run anywhere, no operator cost.** Self-host is a single SQLite file — no Docker, no DB server.
   One config snippet wires it into any MCP client.
 
 ## Results
 
-**📊 0.932 LongMemEval_S · 0.813 LoCoMo — #1 on accuracy-per-dollar.** Two public long-term-memory
-benchmarks; positioning stated honestly — **not raw SOTA, but #1 accuracy-per-dollar** (a cheap
-Gemini reader at a fraction of the leaders' premium-reader cost).
+**📊 0.932 LongMemEval_S · 0.813 LoCoMo.** Two public long-term-memory benchmarks, with the
+standing stated plainly: raw **#2** on LongMemEval_S (behind Mastra 0.949) and raw **#3** on
+LoCoMo. What is distinct is the cost side — Cortex is the only memory system publishing
+$/question, and the only one at 0.9+ on LongMemEval_S with a cost-efficient-tier reader. No
+competitor's $/question has been measured, by us or by them, so no cost comparison is claimed.
 
-| Benchmark | Cortex | Raw rank | Reader (cost) | Retrieval recall@k |
+| Benchmark | Cortex | Raw rank | Reader (cost†) | Retrieval recall@k |
 |---|---|---|---|---|
-| **LongMemEval_S** (500 q) | **0.932** | #2 raw · **#1 acc/$** | `gemini-3.5-flash`, top_k=50, preference-mode, answer-first · **~$0.008/q** | 0.998 |
-| **LoCoMo** (1986 q) | **0.813** | #3 raw · **#1 acc/$** | `gemini-2.5-flash`, top_k=100, answer-first · **~$0.0034/q** | 0.998 |
+| **LongMemEval_S** (500 q) | **0.932** | #2 raw | `gemini-3.5-flash`, top_k=50, preference-mode, answer-first · **~$0.0396/q** | 0.998 |
+| **LoCoMo** (1986 q) | **0.813** | #3 raw | `gemini-2.5-flash`, top_k=100, answer-first · **~$0.0034/q** | 0.998 |
+
+<sub>† $/q is computed from measured token counts (25,723.5 in / 113.5 out per question on
+LongMemEval_S; 10,468.4 in / 92.9 out on LoCoMo) at Google's **confirmed list prices** for the
+reader model — `gemini-3.5-flash` at $1.50/$9.00 per 1M input/output tokens, `gemini-2.5-flash` at
+$0.30/$2.50 (see `bench/cortex_bench/metrics.py`).</sub>
+
+#### The reader frontier — buy accuracy with dollars, not with a different memory system
+
+The same retrieval, the same 500 questions, the same prompt — only the reader model changes. This
+is the trade the memory layer exposes, priced:
+
+| Reader (LongMemEval_S, n=500) | Accuracy | $/question | Cost per **correct** answer |
+|---|:--:|:--:|:--:|
+| `gemini-2.5-flash` | 0.848 | **$0.0079** | $0.0093 |
+| `gemini-3.5-flash` | **0.932** | $0.0396 | $0.0425 |
+
+**+8.4 accuracy points for ~5× the reader cost, with the memory system held fixed.** Retrieval
+recall@k ≈ 1.0 in both arms, so the delta is reader capability, not retrieval — the memory layer
+has already found the evidence in both, and what you are buying with the extra dollars is the
+reading of it. Pick your point on that curve with `CORTEX_READER_MODEL`; nothing else changes.
 
 ### How Cortex compares (LongMemEval_S)
 
 | System | LongMemEval_S | Reader | ~$/q | Judge |
 |---|---|---|---|---|
-| **Cortex** (this repo) | **0.932** | `gemini-3.5-flash` (cheap) | **~$0.008** | gemini-flash |
+| **Cortex** (this repo) | **0.932** | `gemini-3.5-flash` (cost-efficient tier) | **~$0.0396** | gemini-flash |
 | Mastra | 0.949 | `gpt-5-mini` (premium) | — | GPT-4o |
 | Zep / Graphiti | 0.712 | `gpt-4o` (premium) | — | GPT-4o |
 | Mem0 | not published¹ | — (graph) | — | — |
@@ -77,23 +105,19 @@ Gemini reader at a fraction of the leaders' premium-reader cost).
 <sub>Numbers from the verified [leaderboard research](https://github.com/fernsdavid25/cortex-protocol/blob/main/bench/results/leaderboard_research.md).
 **Not apples-to-apples:** competitor scores are self-reported under *their own* judges; Cortex is
 graded by a `gemini-3.5-flash` judge (likely more lenient than the canonical `gpt-4o-2024-08-06`), and
-`~$/q` is only published where Cortex measures it. ¹Mem0 has no verifiable LongMemEval_S number that
-survived verification — it reports LoCoMo (0.61–0.66) instead. Leaders use pricier readers.</sub>
-
-> **The reader is cheap by choice.** These numbers use a deliberately cheap reader
-> (`gemini-3.5-flash` on LongMemEval, `gemini-2.5-flash` on LoCoMo). The retrieval pipeline is
-> **reader-agnostic** — point `CORTEX_READER_MODEL` at a premium model (`gemini-3.1-pro`, Claude
-> Opus) and accuracy climbs into the **top tier of the raw leaderboard**: in our own reader sweep,
-> `gemini-3.1-pro` scored highest of every reader we tested. We publish the cheap-tier numbers on
-> purpose — **premium-tier retrieval quality at ~10× lower reader cost** (#1 on accuracy-per-dollar)
-> is the thesis, not raw accuracy at any cost.
+`~$/q` is only published where Cortex measures it — no competitor `$/q` has been measured. ¹Mem0 has
+no verifiable LongMemEval_S number that survived verification — it reports LoCoMo (0.61–0.66)
+instead. The `~$0.0396` figure is Cortex's own measured token counts priced at Google's confirmed
+`gemini-3.5-flash` list prices.</sub>
 
 > **Judge disclosure (load-bearing).** All Cortex numbers above are graded by an **LLM judge =
 > `gemini-3.5-flash`**. The canonical LongMemEval judge is `gpt-4o-2024-08-06`; a Gemini judge is
-> likely *more lenient*, so a GPT-4o re-grade (pending an OpenAI key) may lower these. As one
-> cross-model sanity check, an independent Claude panel re-graded all 282 LoCoMo multi-hop cases and
-> closely tracked the harness (panel 0.528 vs harness 0.589). The **accuracy-per-dollar** claim does
-> not depend on the judge.
+> likely *more lenient*, so a GPT-4o re-grade (pending an OpenAI key) may lower these. The headline
+> run also used the **same model family as both reader and judge**, so a self-preference bias cannot
+> be excluded and a cross-family re-grade is planned. As one cross-model sanity check, an independent
+> Claude panel re-graded all 282 LoCoMo multi-hop cases and closely tracked the harness (panel 0.528
+> vs harness 0.589). The published **$/question** is measured from token counts at Google's
+> confirmed list prices and does not depend on the judge.
 
 **LongMemEval_S 0.932** — per question type: single-session-user 0.957, single-session-assistant
 0.982, single-session-preference 0.900, knowledge-update 0.949, temporal-reasoning 0.925,
@@ -106,8 +130,9 @@ is not apples-to-apples; canonical judge is GPT-4o.)*
 #### Per question type — Cortex vs the field
 
 One overall number hides where a memory system wins or loses. Split by LongMemEval_S question
-type, Cortex — the **only cheap-reader system in the field** — stays in the top tier of the
-premium-reader systems, and leads outright on single-session-assistant and multi-session recall:
+type, Cortex — the **only cost-efficient-tier-reader system in the field** — stays in the top tier
+of the premium-reader systems, and leads outright on single-session-assistant and multi-session
+recall:
 
 ![LongMemEval_S accuracy by question type — Cortex vs Mastra, EmergenceMem, Supermemory, Zep](https://raw.githubusercontent.com/fernsdavid25/cortex-protocol/main/docs/assets/lme-by-category.png)
 
@@ -160,6 +185,11 @@ python -m cortex_bench.run --system cortex-v0 --variant s --limit 500 \
   --reader-model gemini-3.5-flash --top-k 50 --preference-mode --answer-first \
   --max-output-tokens 8192 --judge gemini --judge-votes 3
 
+# LongMemEval_S — cheap arm of the reader frontier (0.848), same retrieval, cheaper reader:
+python -m cortex_bench.run --system cortex-v0 --variant s --limit 500 \
+  --reader-model gemini-2.5-flash --top-k 50 --preference-mode --answer-first \
+  --max-output-tokens 8192 --judge gemini --judge-votes 3
+
 # LoCoMo — 0.813 (put locomo10.json in bench/data/ first):
 python -m cortex_bench.run --system cortex-v0 --locomo --reader-model gemini-2.5-flash \
   --top-k 100 --answer-first --max-output-tokens 8192 --judge gemini
@@ -181,7 +211,7 @@ Full methodology + per-type tables:
 |---|---|---|
 | **Hybrid retrieval** | Dense (Gemini embeddings) + Okapi BM25, fused with Reciprocal Rank Fusion; deep top-k drives recall@k ≈ 1.0. | **On** (all paths) |
 | **Chain-of-Note reader** | The reader takes structured notes over the retrieved memories before answering, with **calibrated abstention** — it declines when no memory supports an answer instead of hallucinating. | **On** (benchmark path) |
-| **Episodic memory + `recall_timeline`** | One cheap `gemini-2.5-flash-lite` call per `memorize` structures event_time / actor / location, powering the `recall_timeline` tool. **Write-time cost only — recall is byte-identical**, so the accuracy-per-dollar guarantee holds. | Opt-in (`CORTEX_EPISODIC=1`) |
+| **Episodic memory + `recall_timeline`** | One cheap `gemini-2.5-flash-lite` call per `memorize` structures event_time / actor / location, powering the `recall_timeline` tool. **Write-time cost only — recall is byte-identical**, so the published recall cost is unchanged. | Opt-in (`CORTEX_EPISODIC=1`) |
 | **Entity graph + `recall_about`** | At `memorize` time, entities and relationships are folded into the **same** cheap extraction call that does episodic. Builds an ego knowledge graph rooted at a synthetic `self` entity — typed nodes (person / place / org / project / thing) joined by labeled, directed relationships, each memory attached to the entity it's about — powering the `recall_about` tool. **Write-time cost only — recall stays byte-identical.** | Opt-in (`CORTEX_GRAPH=1`) |
 | **Anti-saturation** | Write-time **dedup** (embedding-only, no LLM) bounds store growth; **contradiction soft-update** (one cheap arbiter call) supersedes stale facts so recall returns only the latest value. Saturation harness (2000-write synthetic stream): **41.8% duplicate rows dropped, 100% latest-value retrieval**. | Engine-level, opt-in |
 
@@ -240,7 +270,7 @@ config use `"command": "uv", "args": ["run", "--with", "fastmcp", "python", "-m"
 `recall_timeline`; `CORTEX_EXTRACT_MODEL` (default `gemini-2.5-flash-lite`) is the model that does
 that extraction. Enabling either adds **one cheap flash-lite call per `memorize`** (write-time only,
 on your own key — when both are on they share a single extraction call). **`recall` stays
-byte-identical**, so the accuracy-per-dollar guarantee is unchanged. See
+byte-identical**, so the published recall cost is unchanged. See
 [`examples/`](https://github.com/fernsdavid25/cortex-protocol/tree/main/examples) and
 [`.env.example`](https://github.com/fernsdavid25/cortex-protocol/blob/main/.env.example).
 

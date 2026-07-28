@@ -74,14 +74,19 @@ judge (votes=1) · seed 0. Completed via `--resume` on a second key, **0 failure
 | adversarial (abstention) | **0.877** | 0.765 | −0.112 |
 | **overall** | **0.785** | 0.778 | −0.007 |
 
-reader $/q **$0.0019** · recall@k 0.990 · p50 latency 4.2s.
+reader $/q **$0.0019** · recall@k 0.990 · p50 latency 4.2s. *(Repriced 2026-07-24 at confirmed
+`gemini-3.5-flash` list prices — $1.50/$9.00 per 1M in/out, 5× the rate assumed here — this quality
+arm is ~5× the cheap arm's $/q, not equal to it. The LoCoMo **headline stays `gemini-2.5-flash` at
+$0.0034/q**, whose price was and remains confirmed.)*
 
 ### Reading the result — the stronger reader is a wash
 A more capable reader (gemini-3.5-flash, thinking) **lifts the answerable categories** (single-hop
 +3.3, temporal +3.4) but **regresses on abstention** (−11): it answers unanswerable (adversarial)
-questions instead of declining. The two effects cancel, so overall is unchanged (0.778 vs 0.785) at
-the same cost. Takeaways:
-1. **The cheap config is the sweet spot** — equal accuracy-per-dollar, and it abstains better.
+questions instead of declining. The two effects cancel, so overall is unchanged (0.778 vs 0.785).
+Takeaways:
+1. **The cheap config is the sweet spot** — it abstains better, and (repriced at confirmed
+   `gemini-3.5-flash` list prices) it also wins outright on cost: same accuracy at ~1/5 the reader
+   $/q. On LoCoMo, unlike LongMemEval_S, the expensive reader buys nothing.
 2. **The frontier is not reader capability.** Multi-hop barely moves (0.589→0.578), confirming the
    error analysis above: the lever is retrieval precision + output budget + a reranker, not a bigger
    reader.

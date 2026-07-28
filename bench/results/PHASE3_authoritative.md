@@ -1,10 +1,21 @@
 > **⭐ CURRENT AUTHORITATIVE HEADLINE (2026-07-02): LongMemEval_S = 0.932** via the **A1 fix**
-> (`--answer-first` + `--max-output-tokens 8192`) on the full 500 questions, ~$0.008/q — see the
+> (`--answer-first` + `--max-output-tokens 8192`) on the full 500 questions, **~$0.0396/q** — see the
 > **"A1 FIX: AUTHORITATIVE HEADLINE 0.932"** section at the **end** of this file (backed by the
 > committed artifact `a1_af8k_full500/cortex-v0_s_results.json`). The **0.894** figures throughout
 > this file are **prior history**: the measured progression that led here (kept intact, not deleted).
-> Positioning: **#1 on accuracy-per-dollar; raw #2 on LongMemEval_S** (behind Mastra 0.949) — not raw
-> SOTA.
+> Positioning: **raw #2 on LongMemEval_S** (behind Mastra 0.949); Cortex is the only memory system
+> publishing $/question, and the only one at 0.9+ on LongMemEval_S with a cost-efficient-tier reader.
+> The ~$0.0396/q is computed from the measured token counts (25,723.5 in / 113.5 out) at Google's
+> **confirmed** `gemini-3.5-flash` list prices, $1.50/$9.00 per 1M in/out (see
+> `cortex_bench/metrics.py`). No competitor $/question has been measured.
+>
+> **Reader frontier** (identical retrieval, both full n=500): `gemini-2.5-flash` → **0.848 @
+> ~$0.0079/q**; `gemini-3.5-flash` → **0.932 @ ~$0.0396/q**. +8.4 accuracy points for ~5× the reader
+> cost, same memory system. Cost per correct answer: $0.0093 vs $0.0425.
+>
+> **Note on $/q figures below:** dated run entries in this file were priced at the time of the run,
+> when `gemini-3.5-flash` was still priced by estimate. They are kept as-written; every 3.x-reader
+> `$/q` in a historical section is superseded by the repriced figure above.
 
 # Checkpoint C — AUTHORITATIVE (fixed `gemini-3.5-flash` judge)
 
@@ -63,7 +74,7 @@ cortex-v0 with `--fact-keys` vs without, `_S` n=40 seed 0, `gemini-3.5-flash` ju
 - **Per-query READER cost = $0.0006** (flash-lite over a ~5k-token retrieved context) — negligible.
 - **Benchmark total $/q = $0.012**, ~entirely the **embedding of the haystack** (mean 78,751 embed tokens × $0.15/1M). LongMemEval gives each question its own haystack, so the benchmark pays this per question. In a **real product** the haystack is embedded **once at ingest** and amortized over all future queries → **marginal per-query cost ≈ $0.0006**.
 
-**Accuracy-per-dollar headline:** Cortex ≈ **0.67 (cheap) / ~0.75 (fact-keys)** on `_S` at a **~$0.0006/query** reader cost — matching Zep's 0.712 (GPT-4o) at a tiny fraction of the reader cost, and **+10 pts over naive-RAG**. Remaining: fact-keys at n=100, full-`_S` headline, and the embed-cost lever.
+**Cost headline:** Cortex ≈ **0.67 (cheap) / ~0.75 (fact-keys)** on `_S` at a **~$0.0006/query** reader cost — matching Zep's 0.712 (GPT-4o), and **+10 pts over naive-RAG**. (Zep's own $/query has never been measured, here or by Zep, so no cost comparison is made.) Remaining: fact-keys at n=100, full-`_S` headline, and the embed-cost lever.
 
 ---
 
@@ -74,7 +85,9 @@ Replaces earlier rough numbers. Verified via multi-source adversarial research (
 > fix. The current authoritative Cortex number is **0.932** (raw #2, behind only Mastra 0.949) — see
 > the **A1 FIX** section at the end of this file and the updated `leaderboard_research.md`. The
 > "scores higher / not SOTA vs Emergence & Supermemory" prose in this dated block reflects the
-> pre-A1 0.866 and is kept only as history.
+> pre-A1 0.866 and is kept only as history. *(Repriced 2026-07-24 at confirmed `gemini-3.5-flash`
+> list prices: the current headline is **$0.0396/q**; the `~$0.008/q` in this dated block was priced
+> when 3.5-flash was still an estimate.)*
 
 | System | LongMemEval_S | Reader | Judge | Notes |
 |---|---|---|---|---|
@@ -91,7 +104,7 @@ Replaces earlier rough numbers. Verified via multi-source adversarial research (
 **Honest positioning (corrects earlier over-claims):**
 - Cortex is **NOT the raw-accuracy SOTA.** Mastra (0.95), Hindsight (0.91), Emergence (0.86), Supermemory (0.85) score higher — **all with premium readers** (gpt-5-mini, gemini-3-pro, GPT-5/GPT-4o).
 - **Our judge (gemini-flash) is more lenient than the canonical GPT-4o** → our true GPT-4o-judged number is likely **lower** than 0.84–0.87. **A GPT-4o re-grade is REQUIRED before any ranking claim** (needs `OPENAI_API_KEY`).
-- **Cortex's real win is accuracy-per-dollar:** it matches the *gpt-4o-reader* tier (Mastra-gpt-4o 0.842, Supermemory-gpt-4o 0.816) at a **~10× cheaper reader** (~$0.008/q vs a gpt-4o reader).
+- **Cortex's real win is published cost at a cost-efficient reader tier:** it matches the *gpt-4o-reader* tier (Mastra-gpt-4o 0.842, Supermemory-gpt-4o 0.816) while publishing its own $/question *(repriced 2026-07-24 at confirmed `gemini-3.5-flash` list prices: **$0.0396/q**)*. No competitor $/question has been measured, so no cost-ratio comparison is claimed.
 - Mem0 / Letta / Memary / Memobase: **no verifiable primary LongMemEval_S number with variant+judge specified** survived verification (earlier "Mem0 ~0.49" was refuted — drop it).
 - The leaders' approach is **"observational memory" / reflection** (pre-process sessions into observations with an observer model) + premium readers — a different architecture than our retrieval-only pipeline. Beating them needs either a premium reader (kills the cost edge) or a reflection layer (discuss).
 
@@ -139,7 +152,7 @@ Replaces earlier rough numbers. Verified via multi-source adversarial research (
 | gemini-2.5-pro | 0.81 | 0.64 | 0.80 | 0.95 | 0.43 | high, slow | worse + slowest → skip |
 | **gemini-3.1-pro-preview** | **0.85** | 0.72 | 0.80 | 1.00 | 0.57 | high* | absolute best (preview) |
 
-\* 3.x prices are estimates pending confirmation. recall@k = 0.969 and abstention = 1.00 for every strong reader.
+\* 3.x prices were estimates when this sweep ran. *(Repriced 2026-07-24: `gemini-3.5-flash` is confirmed at $1.50/$9.00 per 1M in/out — 5× the input rate assumed here, its `~$0.0018` row is understated by roughly 5× and it is **not** the per-dollar champ; `gemini-2.5-flash` at $0.30/$2.50 is unchanged and `gemini-3.1-pro-preview` remains an estimate.)* recall@k = 0.969 and abstention = 1.00 for every strong reader.
 
 **Conclusions:**
 1. **The reader is the dominant lever and it's now saturated at 0.83–0.85.** flash-lite→strong = +16-18 pts; among strong readers it's flat (within 1-2 questions = noise).
@@ -230,7 +243,7 @@ To rule out gemini-3.5-flash judge leniency inflating 0.95, an **independent Cla
 | gemini-2.5-flash + k=50 | 0.840 | 0.744 | 0.872 | 0.500 | $0.0079 |
 | **gemini-3.5-flash + k=50** | **0.866** | **0.835** | 0.923 | 0.467 | ~$0.0079* |
 
-The stronger reader lifts overall **0.84 → 0.866** and — crucially — **multi-session 0.744 → 0.835**: multi-session was *partly reader-bound* (gemini-3.5-flash synthesizes across many sessions better than 2.5-flash), not purely retrieval-bound. knowledge-update 0.923, recall 0.996. ss-preference stays 0.467 (no preference-mode in this run). \* 3.5-flash price estimated == 2.5-flash, pending confirmation.
+The stronger reader lifts overall **0.84 → 0.866** and — crucially — **multi-session 0.744 → 0.835**: multi-session was *partly reader-bound* (gemini-3.5-flash synthesizes across many sessions better than 2.5-flash), not purely retrieval-bound. knowledge-update 0.923, recall 0.996. ss-preference stays 0.467 (no preference-mode in this run). \* 3.5-flash price was estimated == 2.5-flash when this ran. *(Repriced 2026-07-24 at confirmed `gemini-3.5-flash` list prices: the 3.5-flash arm is **~$0.0396/q**, not ~$0.0079; the 2.5-flash row is unchanged.)*
 
 **Combined best: gemini-3.5-flash + k=50 + preference-mode** — projected ~0.88, but the full-500 run was **quota-killed and excluded**: gemini-3.5-flash hit its **daily request cap** (`generate_requests_per_model_per_day = 10,000`; it's both reader AND judge here, after many runs today) → 405/500 failed (acc 0.182 = artifact). Resets in ~17.5h; re-run then.
 
@@ -246,7 +259,7 @@ All: top_k=50, embed cache, gemini-3.5-flash judge votes=3, seed 0, ALL 500 ques
 | gemini-3.5-flash | 0.866 | 0.835 | 0.865 | 0.923 | 0.467 | 0.996 | ~$0.0079* |
 | **gemini-3.5-flash + preference-mode** | **0.894** | 0.850 | 0.872 | 0.910 | 0.800 | 0.998 | **$0.0080** |
 
-**Headline: Cortex = 0.894 on the FULL LongMemEval_S (500q) with a cheap Gemini reader (~$0.008/query)** (gemini-3.5-flash + top_k=50 + preference-mode). Under our gemini-flash judge this **beats Zep (0.712), Supermemory (0.852), and Emergence (0.86)**, and trails only the premium-reader leaders Mastra (0.95, gpt-5-mini) / Hindsight (0.91, OSS judge) / ByteRover (0.93 claimed) — at a fraction of their reader cost. **⚠️ Judge caveat:** our gemini-flash judge is likely more lenient than the canonical GPT-4o, so a GPT-4o re-grade (deferred per David) would likely lower this; treat 0.894 as our-judge, accuracy-per-dollar-framed. Levers: stronger reader, top_k=50 depth (recall→1.0), preference-aware reader (ss-pref 0.50→0.80). \* 3.5-flash price estimated == 2.5-flash.
+**Headline: Cortex = 0.894 on the FULL LongMemEval_S (500q) with a cheap Gemini reader (~$0.008/query)** (gemini-3.5-flash + top_k=50 + preference-mode). Under our gemini-flash judge this **beats Zep (0.712), Supermemory (0.852), and Emergence (0.86)**, and trails only the premium-reader leaders Mastra (0.95, gpt-5-mini) / Hindsight (0.91, OSS judge) / ByteRover (0.93 claimed). (No competitor $/query has ever been measured, so no cost comparison is made.) **⚠️ Judge caveat:** our gemini-flash judge is likely more lenient than the canonical GPT-4o, so a GPT-4o re-grade (deferred per David) would likely lower this; the headline run also used the same model family as both reader and judge, so a self-preference bias cannot be excluded and a cross-family re-grade is planned. Treat 0.894 as our-judge, cost-framed. Levers: stronger reader, top_k=50 depth (recall→1.0), preference-aware reader (ss-pref 0.50→0.80). \* 3.5-flash price was estimated == 2.5-flash when these ran. *(Repriced 2026-07-24 at confirmed `gemini-3.5-flash` list prices: every 3.5-flash row above is **~$0.0396/q**, not ~$0.008; the two 2.5-flash rows stand at $0.0079. This table is also the reader frontier at full n=500 with identical retrieval: 2.5-flash 0.848 @ $0.0079 vs 3.5-flash 0.932 @ $0.0396 after the A1 fix.)*
 
 ### Reflection / observational layer — REJECTED (negative result, full 500)
 Tested `--reflect` (cheap flash-lite aux digests retrieved memories → dated TIMELINE / CURRENT FACTS / TOTALS, prepended to reader) on top of the 0.894 config:
@@ -255,6 +268,8 @@ Tested `--reflect` (cheap flash-lite aux digests retrieved memories → dated TI
 |---|---|---|---|---|---|---|
 | 3.5-flash + k50 + preference (best) | **0.894** | 0.850 | 0.872 | 0.910 | 0.800 | $0.008 |
 | + reflection (flash-lite aux) | 0.844 | 0.774 | 0.842 | 0.897 | 0.633 | $0.016 |
+
+*(Repriced 2026-07-24: both rows used a `gemini-3.5-flash` reader, whose confirmed list price is 5× the rate assumed here, so both absolute $/q are understated by ~5×. The **~2× ratio** — the actual result — is unaffected.)*
 
 **Reflection HURTS: −5.0 pts overall AND ~2× cost** (mean input 50k tokens/q). Every weak category got *worse* (multi-session −7.6, temporal −3.0, ss-pref −16.7). Why: with recall already ~1.0, a cheap (flash-lite) digest of 50 chunks introduces lossy/incorrect summaries that the strong reader sometimes trusts over the raw evidence, and the extra block distracts the preference reader. **Conclusion: the cheap pipeline is reader/evidence-bound at 0.894 — a cheap observational layer adds noise, not signal.** `--reflect` kept in the code (default OFF) but not used. To reach the leaders' 0.90+ would require a *premium* reader (kills the cost edge) or a much stronger (expensive) observer — a product-tier decision, not a cheap-pipeline win.
 
@@ -273,7 +288,8 @@ full 500: **0.894 → 0.932 (+3.8 pt)**.
 
 **Backing artifact (committed):** [`a1_af8k_full500/cortex-v0_s_results.json`](a1_af8k_full500/cortex-v0_s_results.json)
 (+ `a1_af8k_full500/cortex-v0_s_hypotheses.jsonl`). Every number in the table below is read directly
-from that JSON — nothing here is estimated.
+from that JSON — nothing here is estimated; `$/q` is the JSON's measured token counts priced at
+Google's confirmed `gemini-3.5-flash` list prices ($1.50/$9.00 per 1M in/out).
 
 | metric | value |
 |---|---|
@@ -288,7 +304,8 @@ from that JSON — nothing here is estimated.
 | non-abstention (n=470) | 0.936 |
 | recall@k | 0.998 |
 | mean input tokens/q | ~25.7k |
-| reader $/q | **~$0.008** |
+| reader $/q | **~$0.0396** |
+| cost per correct answer | **~$0.0425** |
 
 **Progression (kept for the record):** 0.840 (2.5-flash + k50) → 0.848 (+preference) → 0.866
 (3.5-flash + k50) → **0.894** (3.5-flash + k50 + preference) → **0.932** (+ A1: answer-first + 8192
@@ -302,10 +319,14 @@ LoCoMo (small ~5–10k contexts) the same A1 fix was **neutral** (see
 [`LOCOMO_results.md`](LOCOMO_results.md)) — A1 pays where contexts are large. The LoCoMo headline
 (0.813) instead comes from retrieval depth (k=50 → 100).
 
-**Positioning (framing unchanged, number updated):** **#1 on accuracy-per-dollar.** Under our
-gemini-flash judge, 0.932 is **raw #2** on LongMemEval_S — behind only Mastra (0.949, gpt-5-mini) and
-above ByteRover (0.928 claimed), Hindsight (0.914), Emergence (0.860), Supermemory (0.852), Zep
-(0.712) — all of which use pricier readers. **Not raw SOTA.** Same-judge caveat still applies: our
-gemini-flash judge is likely more lenient than the canonical GPT-4o, so a GPT-4o re-grade (pending an
-`OPENAI_API_KEY`) may lower the raw number; the accuracy-per-dollar claim (a cheap reader at
-~$0.008/q) does not depend on the judge.
+**Positioning (number updated):** under our gemini-flash judge, 0.932 is **raw #2** on
+LongMemEval_S — behind only Mastra (0.949, gpt-5-mini) and above ByteRover (0.928 claimed),
+Hindsight (0.914), Emergence (0.860), Supermemory (0.852), Zep (0.712). What is distinct: Cortex is
+the only memory system publishing $/question, and the only one at 0.9+ on LongMemEval_S with a
+cost-efficient-tier reader; no competitor $/question has been measured, so no cost comparison is
+claimed. Same-judge caveat still applies: our gemini-flash judge
+is likely more lenient than the canonical GPT-4o, so a GPT-4o re-grade (pending an `OPENAI_API_KEY`)
+may lower the raw number, and the headline run used the same model family as both reader and judge,
+so a self-preference bias cannot be excluded and a cross-family re-grade is planned. The published
+$/question (~$0.0396/q at Google's confirmed `gemini-3.5-flash` list prices) is measured from token
+counts and does not depend on the judge.

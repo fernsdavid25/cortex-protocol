@@ -8,9 +8,23 @@ Self-host it as a local stdio server — a single SQLite file, your own Gemini k
 **nothing phones home** — and `recall` does **no** server-side LLM generation, so the only
 runtime cost is your own embedding tokens.
 
-!!! quote "📊 0.932 LongMemEval_S · 0.813 LoCoMo — #1 on accuracy-per-dollar"
-    Premium-tier retrieval quality paired with a **cheap Gemini reader** at **~$0.008/question** —
-    not raw accuracy at any cost.
+!!! quote "📊 0.932 LongMemEval_S · 0.813 LoCoMo"
+    The only memory system publishing $/question, and the only one at 0.9+ on LongMemEval_S with a
+    **cost-efficient-tier reader** — a Gemini Flash reader at **~$0.0396/question** on
+    LongMemEval_S (**~$0.0034/question** on LoCoMo). Raw standing: **#2** on LongMemEval_S (behind
+    Mastra 0.949), **#3** on LoCoMo.
+
+    *The reader frontier:* on the same 500 questions with the same retrieval, a `gemini-2.5-flash`
+    reader scores **0.848 at ~$0.0079/question** and `gemini-3.5-flash` scores **0.932 at
+    ~$0.0396/question** — +8.4 accuracy points for ~5× the reader cost, same memory system.
+
+    *Cost footnote:* per-question cost is computed from measured token counts at Google's
+    **confirmed list prices** (paid tier) for the reader model.
+
+    *Judge disclosure:* all Cortex numbers are graded by a `gemini-3.5-flash` judge, likely more
+    lenient than the canonical `gpt-4o-2024-08-06`; the headline run used the same model family as
+    both reader and judge, so a self-preference bias cannot be excluded and a cross-family re-grade
+    is planned.
 
 ## Install
 

@@ -1,4 +1,4 @@
-"""Scoring + the competitor-beating diagnostic columns (accuracy-per-dollar).
+"""Scoring + the cost/accuracy diagnostic columns ($/question, recall@k, abstention).
 
 Reports what competitors hide: per-type accuracy, a distinct abstention bucket,
 mean context tokens/query, $/question, latency p50/p95, and retrieval recall@k.
@@ -18,15 +18,18 @@ PRICES: dict[str, tuple[float, float]] = {
     "gemini-2.5-pro": (1.25, 10.0),
     "gemini-embedding-001": (0.15, 0.0),
     "gpt-4o-2024-08-06": (2.50, 10.0),
-    # ESTIMATES for newer/preview readers — verify against live Gemini pricing before quoting.
-    "gemini-3.5-flash": (0.30, 2.50),
-    "gemini-3.1-pro-preview": (2.0, 12.0),
+    # Confirmed 2026-07-24 against Google's published Gemini pricing (paid tier, standard).
+    "gemini-3.5-flash": (1.50, 9.00),
+    "gemini-3.6-flash": (1.50, 7.50),
+    "gemini-3.1-pro-preview": (2.0, 12.0),  # confirmed for prompts <= 200k tokens
 }
 
-# Reader models whose PRICES entry above is a code-labeled ESTIMATE (preview/unreleased pricing),
-# stamped as ``price_source: "estimated"`` into the report so a downstream $/question quote from
-# one of them is never mistaken for published ground truth.
-ESTIMATED_PRICE_MODELS: frozenset[str] = frozenset({"gemini-3.5-flash", "gemini-3.1-pro-preview"})
+# Reader models whose PRICES entry above is a code-labeled ESTIMATE (unreleased/unpublished
+# pricing), stamped as ``price_source: "estimated"`` into the report so a downstream $/question
+# quote from one of them is never mistaken for published ground truth. Every rate in PRICES is
+# currently confirmed against a published rate card, so this set is empty — keep the mechanism
+# for the next model that ships before its pricing does.
+ESTIMATED_PRICE_MODELS: frozenset[str] = frozenset()
 
 # Systems that actually retrieve a SUBSET of sessions, for which recall@k is a real
 # retrieval-quality metric. For any other system (stubs, full-context) recall@k is trivial —

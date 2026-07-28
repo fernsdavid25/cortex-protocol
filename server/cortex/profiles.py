@@ -1,8 +1,14 @@
 """Single source of truth for CORTEX_TIER profiles (hosted engine + bench reader knobs).
 
-The ``cheap`` tier is the #1 accuracy-per-dollar system. Its invariant is **cost per RECALL**: the
-hosted recall path and the benchmark HEADLINE config (LongMemEval_S 0.932 / LoCoMo 0.813) stay
-byte-identical. Cheap MAY gain write-time ("store") enrichments that don't touch recall cost —
+The ``cheap`` tier is the cost-efficient default. Its invariant is **cost per RECALL**, not
+configuration equality with the benchmark: Cortex ships *retrieval*, while the benchmark measures
+retrieval **plus a reference reader** that the benchmark supplies. In the hosted product the user's
+own agent is the reader, so this dict deliberately carries two different sets of knobs — the hosted
+recall knobs (``top_k``, ``hosted_rerank``) and the frozen bench reader/retrieval knobs
+(``bench_top_k``, ``reader_model``, ``use_rerank``, …) — and their values differ on purpose. The
+retrieval *algorithm* (dense + BM25 → RRF over the same store) is the same code on both paths; the
+depths and the reader are not, and no claim of a byte-identical configuration is made here.
+Cheap MAY gain write-time ("store") enrichments that don't touch recall cost —
 per the tier-cost policy, episodic extraction is one such: a cheap flash-lite call per ``memorize``
 that structures event_time/actor/location/what (recall is unchanged). It is ON by default in
 ``cheap`` and opt-out via ``CORTEX_EPISODIC=0`` (or a self-hoster leaving no extract model). Only
@@ -21,7 +27,9 @@ from collections.abc import Mapping
 
 log = logging.getLogger(__name__)
 
-# FROZEN cheap tier = today's benchmark HEADLINE config (LongMemEval_S 0.932).
+# Cheap tier. The ``bench_*``/reader entries below are the FROZEN LongMemEval_S 0.932 headline
+# config; the hosted entries (``top_k``, ``hosted_rerank``) are the product's own recall settings
+# and intentionally differ from them.
 CHEAP: dict = {
     # hosted engine knobs (the only server-side tunables)
     "embed_model": "gemini-embedding-001",

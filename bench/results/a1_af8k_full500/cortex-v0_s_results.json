@@ -42,6 +42,7 @@
   "latency_ms_p95": 12835.3,
   "recall_at_k": 0.9977,
   "measured_n": 346,
-  "usd_per_question_reader": 0.008001,
-  "usd_per_question": 0.008001
+  "price_source": "published",
+  "usd_per_question_reader": 0.039607,
+  "usd_per_question": 0.039607
 }

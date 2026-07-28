@@ -3,15 +3,17 @@
 Multi-source, adversarially-verified research (99 agents, 17 sources fetched, 25 claims verified).
 **Bottom line: the canonical judge is `gpt-4o-2024-08-06` (>97% human agreement); cross-system
 comparison is only valid under the same judge. Under our gemini-flash judge Cortex now scores
-`0.932` on LongMemEval_S — raw #2 (behind only Mastra 0.949) and #1 on accuracy-per-dollar (a cheap
-Gemini reader vs the leaders' premium readers). Not raw SOTA; a GPT-4o re-grade is still pending.**
+`0.932` on LongMemEval_S — raw #2 (behind only Mastra 0.949). What is distinct: Cortex is the only
+memory system publishing $/question, and the only one at 0.9+ on LongMemEval_S with a
+cost-efficient-tier reader. No competitor $/question has been measured, so no cost comparison is
+claimed. A GPT-4o re-grade is still pending.**
 
 ## Ranked leaderboard (LongMemEval_S, 500 questions) — judge flagged
 
 | # | System | Accuracy | Reader | Judge | Source |
 |---|---|---|---|---|---|
 | 1 | Mastra (Observational Memory) | 0.9487 / 0.9327 / 0.8920 / 0.8423 | gpt-5-mini / gemini-3-pro / gemini-3-flash / gpt-4o | GPT-4o | mastra.ai/research/observational-memory |
-| **2** | **Cortex (this repo)** | **0.932** | gemini-3.5-flash + top_k=50 + preference-mode + A1 (~$0.008/q) | **gemini-flash** | this repo, full 500q (`a1_af8k_full500/`) |
+| **2** | **Cortex (this repo)** | **0.932** | gemini-3.5-flash + top_k=50 + preference-mode + A1 (**~$0.0396/q**) | **gemini-flash** | this repo, full 500q (`a1_af8k_full500/`) |
 | 3 | ByteRover 2.1.5 (claimed, unverified) | 0.928 | Gemini-3.1-pro | unstated | byterover.dev blog |
 | 4 | Hindsight (Vectorize.io, arXiv 2512.12818) | 0.914 / 0.890 / 0.836 | Gemini-3 / GPT-OSS-120B / GPT-OSS-20B | **GPT-OSS-120B** (not GPT-4o) | arxiv.org/html/2512.12818v1 |
 | 5 | Emergence AI | 0.860 | gpt-4o | GPT-4o | emergence.ai/blog/sota-on-longmemeval-with-rag |
@@ -23,8 +25,9 @@ Gemini reader vs the leaders' premium readers). Not raw SOTA; a GPT-4o re-grade 
 > **Cortex row is under our gemini-flash judge (more lenient than GPT-4o), and 0.932 is the A1 fix
 > (`--answer-first` + `--max-output-tokens 8192`) on the 0.894 config — see
 > `PHASE3_authoritative.md`. On the second benchmark, LoCoMo, Cortex scores 0.813 (raw #3) at
-> ~$0.0034/q — see `LOCOMO_results.md`. The `#2` rank is raw-score-under-our-judge; the durable claim
-> is #1 accuracy-per-dollar. Not raw SOTA; GPT-4o re-grade pending.**
+> ~$0.0034/q — see `LOCOMO_results.md`. The `#2` rank is raw-score-under-our-judge; the durable
+> claim is that Cortex is the only memory system publishing $/question, and the only one at 0.9+ on
+> LongMemEval_S with a cost-efficient-tier reader. GPT-4o re-grade pending.**
 
 ## Key facts (verified)
 
@@ -53,7 +56,7 @@ Gemini reader vs the leaders' premium readers). Not raw SOTA; a GPT-4o re-grade 
 **Product implication:** build **ONE combined core** (hybrid retrieval + reranker + reader), not multiple specialized protocols. Add biological modules (reflection, graph) only as optional flags *if/when a benchmark proves they earn their cost*.
 
 ## What this means for Cortex
-- **Where Cortex now sits (our gemini-flash judge):** LongMemEval_S **0.932** — **raw #2**, behind only Mastra (0.949) and above ByteRover (0.928 claimed), Hindsight (0.914), Emergence (0.860), Supermemory (0.852), Zep (0.712). LoCoMo **0.813** — raw #3. **#1 on accuracy-per-dollar** (a cheap Gemini reader, ~$0.008/q on LME and ~$0.0034/q on LoCoMo, vs the leaders' premium readers). **Not raw SOTA.**
+- **Where Cortex now sits (our gemini-flash judge):** LongMemEval_S **0.932** — **raw #2**, behind only Mastra (0.949) and above ByteRover (0.928 claimed), Hindsight (0.914), Emergence (0.860), Supermemory (0.852), Zep (0.712). LoCoMo **0.813** — raw #3. Cortex is the only memory system publishing $/question (**~$0.0396/q** on LME and ~$0.0034/q on LoCoMo, both computed from measured token counts at Google's confirmed list prices), and the only one at 0.9+ on LongMemEval_S with a cost-efficient-tier reader. No competitor $/question has been measured, so no cost comparison is claimed. **Reader frontier** (identical retrieval, full n=500): `gemini-2.5-flash` 0.848 @ ~$0.0079/q vs `gemini-3.5-flash` 0.932 @ ~$0.0396/q — +8.4 points for ~5× the reader cost.
 - **What got Cortex from 0.894 → 0.932:** the **A1 fix** (`--answer-first` + `--max-output-tokens 8192`), which kills mid-NOTES truncation on LongMemEval's large contexts (see `PHASE3_authoritative.md`). The LoCoMo 0.813 came from retrieval depth (k=50 → 100).
-- **Same-judge caveat (still load-bearing):** our gemini-flash judge is likely more lenient than the canonical GPT-4o, so a GPT-4o re-grade (`evaluate_qa.py gpt-4o`, needs an OpenAI key) may lower the raw number. The **accuracy-per-dollar** claim (a cheap reader at a fraction of the leaders' reader cost) does not depend on the judge.
-- **Differentiator: accuracy-per-dollar.** The leaders use premium readers (gpt-5-mini, gemini-3-pro, GPT-5). Cortex reaches 0.932 with one mid-tier Gemini reader at ~10× lower reader cost.
+- **Same-judge caveat (still load-bearing):** our gemini-flash judge is likely more lenient than the canonical GPT-4o, so a GPT-4o re-grade (`evaluate_qa.py gpt-4o`, needs an OpenAI key) may lower the raw number. The headline run also used the same model family as both reader and judge, so a self-preference bias cannot be excluded and a cross-family re-grade is planned. The published **$/question** is measured from token counts at Google's confirmed list prices and does not depend on the judge.
+- **Differentiator: published cost at a cost-efficient reader tier.** The leaders use premium readers (gpt-5-mini, gemini-3-pro, GPT-5) and none of them publishes a $/question. Cortex reaches 0.932 with one mid-tier Gemini reader and publishes what that costs.

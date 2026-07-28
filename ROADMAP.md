@@ -9,14 +9,17 @@ systems.
 
 **Add a mechanism only when a benchmark shows it earns its cost.** Every change is gated on the
 suite below. This already saved us from a reflection layer that *hurt* accuracy (−5 pts at ~2×
-cost). Positioning is honest: **not raw SOTA — #1 on accuracy-per-dollar.** Cortex targets the best
-accuracy *per dollar* (premium-tier retrieval quality with a cheap Gemini reader), with $/question
-published, not raw accuracy at any cost.
+cost). Positioning is honest: raw **#2** on LongMemEval_S (behind Mastra 0.949) and raw **#3** on
+LoCoMo. What is distinct is the cost side — Cortex is the only memory system publishing
+$/question, and the only one at 0.9+ on LongMemEval_S with a cost-efficient-tier reader. It targets
+accuracy *per dollar*, not raw accuracy at any cost.
 
 ## The measuring sticks
 
 - **LongMemEval_S** (bounded long-term QA) — current headline **0.932** with a cheap
-  `gemini-3.5-flash` reader (~$0.008/question), retrieval recall@k ≈ 1.0.
+  `gemini-3.5-flash` reader (~$0.0396/question, computed from measured token counts at Google's
+  confirmed list prices), retrieval recall@k ≈ 1.0. The same retrieval read by the cheaper
+  `gemini-2.5-flash` scores **0.848 at ~$0.0079/question** — the reader frontier, priced.
 - **LoCoMo** (multi-hop / temporal / adversarial) — current headline **0.813** with
   `gemini-2.5-flash` (~$0.0034/question).
 - **Agent uplift** (`bench/agent_uplift/`) — does memory make an agent *better*? Memoryless 0.00 vs
@@ -24,6 +27,8 @@ published, not raw accuracy at any cost.
 
 See [`README.md`](README.md) and `bench/results/` for full methodology and per-type tables. All
 Cortex numbers are graded by a Gemini judge (disclosed); the canonical LongMemEval judge is GPT-4o.
+The headline run used the same model family as both reader and judge, so a self-preference bias
+cannot be excluded and a cross-family re-grade is planned.
 
 ## Stages
 
@@ -39,7 +44,7 @@ Cortex numbers are graded by a Gemini judge (disclosed); the canonical LongMemEv
 - **Persistent per-user store** (SQLite, WAL, float32-blob vectors) with an embedding-signature
   guard, bounded short-id deletion, and graceful shutdown.
 - **Additive, opt-in enrichment layers** — each write-time only, so **recall stays byte-identical**
-  and the accuracy-per-dollar guarantee holds:
+  and the published recall cost is unchanged:
   - **Episodic memory** — one cheap extraction per `memorize` structures event_time / actor /
     location / event_type, powering a timeline read.
   - **Entity graph + `recall_about`** — the same extraction folds entities and labeled,

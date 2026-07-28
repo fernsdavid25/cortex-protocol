@@ -123,7 +123,7 @@ enrichment layers below depend on (`build_episodic_extraction_prompt`, `parse_gr
 All three layers are **off by default** and act at **write time only**. With every flag off (or no
 `extractor` configured), `memorize` is exactly one embed + persist and `recall` is exactly one embed
 + hybrid retrieve — no extra model calls, and recall never even queries the enrichment tables. That
-byte-identical guarantee is what preserves the accuracy-per-dollar headline numbers.
+byte-identical guarantee is what preserves the published headline numbers and their per-query cost.
 
 - **Episodic memory** — `use_episodic` + an `extractor`. One cheap extraction per `memorize`
   structures `event_time` / `actor` / `location` / `event_type` into the `events` table, powering

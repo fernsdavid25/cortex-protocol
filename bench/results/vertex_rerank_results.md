@@ -14,6 +14,11 @@ readers, gemini-3.5-flash judge votes=1, seed 0, n=100 same-question A/B vs the 
 | **LoCoMo** (n=100) | 0.770 | **0.780** | **+1.0pt** | 0.0034 → **0.0011** (~3×) |
 | **LongMemEval_S** (n=100) | 0.990 | **0.990** | 0.0 (ceiling) | 0.0153 → **0.0044** (~3.5×) |
 
+*(Repriced 2026-07-24: the LongMemEval_S row used a `gemini-3.5-flash` reader, since confirmed at
+$1.50/$9.00 per 1M in/out — 5× the rate assumed when this ran — so both of its absolute $/q figures
+are understated by ~5×. The **~3.5× reduction ratio**, which is the result here, is unaffected. The
+LoCoMo row used `gemini-2.5-flash` and is unchanged.)*
+
 **LoCoMo per-category** (vs baseline): single-hop 0.784→0.824 (**+3.9**), multi-hop 0.615→0.615
 (**held** — vs listwise −20pt), temporal 0.917→0.917, adversarial 0.857→0.810 (**−4.8**, the lone
 regression), **recall@k 0.998→0.975 held** (vs listwise 0.78). **LME per-category:** every bucket
