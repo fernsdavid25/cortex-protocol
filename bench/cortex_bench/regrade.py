@@ -109,11 +109,15 @@ def main(argv: list[str] | None = None) -> dict:
     ap.add_argument("--data", help="explicit dataset path (overrides --variant)")
     ap.add_argument("--data-dir", default="bench/data")
     ap.add_argument("--judge", default="openai", choices=["openai", "gemini", "offline"])
-    ap.add_argument("--judge-model", default=None, help="defaults per backend (openai: gpt-4o-2024-08-06)")
+    ap.add_argument(
+        "--judge-model", default=None, help="defaults per backend (openai: gpt-4o-2024-08-06)"
+    )
     ap.add_argument("--judge-votes", type=int, default=1)
     ap.add_argument("--sample", type=int, default=0, help="judge a random N-item subset (0 = all)")
     ap.add_argument("--seed", type=int, default=0, help="seed for the deterministic sample")
-    ap.add_argument("--dry-run", action="store_true", help="build prompts + estimate cost, call nothing")
+    ap.add_argument(
+        "--dry-run", action="store_true", help="build prompts + estimate cost, call nothing"
+    )
     ap.add_argument("--out", default="", help="directory to write the regraded jsonl + summary")
     args = ap.parse_args(argv)
 
@@ -148,7 +152,10 @@ def main(argv: list[str] | None = None) -> dict:
     # --- cost preview -------------------------------------------------------------------------
     prompts = [
         get_anscheck_prompt(
-            inst.question_type, inst.question, inst.answer, row.get("hypothesis", ""),
+            inst.question_type,
+            inst.question,
+            inst.answer,
+            row.get("hypothesis", ""),
             abstention=inst.is_abstention,
         )
         for inst, row in pairs
@@ -192,7 +199,12 @@ def main(argv: list[str] | None = None) -> dict:
         else:
             new_only += 1
         out_rows.append(
-            {"question_id": inst.question_id, "category": cat, "old_correct": old, "new_correct": new}
+            {
+                "question_id": inst.question_id,
+                "category": cat,
+                "old_correct": old,
+                "new_correct": new,
+            }
         )
         if i % 25 == 0 or i == len(pairs):
             print(f"  judged {i}/{len(pairs)}", flush=True)
