@@ -39,20 +39,35 @@ def format_sessions(instance: QAInstance) -> str:
     return "\n\n".join(blocks)
 
 
-def rounds(session_turns: list[dict]) -> list[str]:
-    """Group consecutive turns into round chunks, closing a round after each assistant turn."""
-    chunks: list[str] = []
+def rounds_with_spans(session_turns: list[dict]) -> list[tuple[str, tuple[int, ...]]]:
+    """Round chunks paired with the 0-based positions of the turns each one contains.
+
+    This is the SINGLE owner of the round-grouping rule (close a round after each assistant
+    turn, flush any trailing remainder). ``rounds()`` is a projection of it, so the chunk text
+    and its turn provenance can never disagree about where a chunk starts and ends — which is
+    what makes coverage@k trustworthy: a chunk covers every turn in its span, because the
+    reader literally sees that turn's text.
+    """
+    chunks: list[tuple[str, tuple[int, ...]]] = []
     current: list[str] = []
-    for turn in session_turns:
+    positions: list[int] = []
+    for pos, turn in enumerate(session_turns):
         role = turn.get("role", "")
         content = turn.get("content", "")
         current.append(f"{role}: {content}")
+        positions.append(pos)
         if role == "assistant":
-            chunks.append("\n".join(current))
+            chunks.append(("\n".join(current), tuple(positions)))
             current = []
+            positions = []
     if current:
-        chunks.append("\n".join(current))
+        chunks.append(("\n".join(current), tuple(positions)))
     return chunks
+
+
+def rounds(session_turns: list[dict]) -> list[str]:
+    """Group consecutive turns into round chunks, closing a round after each assistant turn."""
+    return [text for text, _positions in rounds_with_spans(session_turns)]
 
 
 def cosine(a: Sequence[float], b: Sequence[float]) -> float:

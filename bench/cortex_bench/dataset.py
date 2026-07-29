@@ -9,6 +9,7 @@ import urllib.request
 from pathlib import Path
 
 from .memory_system import QAInstance
+from .turns import turn_id
 
 HF_BASE = "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/main"
 VARIANT_FILES = {
@@ -16,6 +17,29 @@ VARIANT_FILES = {
     "m": "longmemeval_m_cleaned.json",
     "oracle": "longmemeval_oracle.json",
 }
+
+
+def _gold_turn_ids(entry: dict) -> list[str]:
+    """Turn ids of every haystack turn flagged ``has_answer: true`` (turn-level gold).
+
+    LongMemEval marks the individual evidence TURNS inside a gold session with a per-turn
+    ``has_answer`` boolean; non-gold sessions omit the key entirely. That is the turn-level
+    counterpart of ``answer_session_ids``, and until now zero lines of this harness read it.
+
+    A release that omits ``has_answer`` (possible for the *oracle* variant, which we cannot
+    confirm without downloading it) yields ``[]`` here — which makes coverage@k degrade to
+    ``None`` ("not reported") rather than to a fabricated 0.0.
+    """
+    ids: list[str] = []
+    for sid, session in zip(
+        entry.get("haystack_session_ids", []),
+        entry.get("haystack_sessions", []),
+        strict=False,
+    ):
+        for pos, turn in enumerate(session):
+            if isinstance(turn, dict) and turn.get("has_answer"):
+                ids.append(turn_id(str(sid), pos))
+    return ids
 
 
 def parse_instances(raw: list[dict]) -> list[QAInstance]:
@@ -31,6 +55,7 @@ def parse_instances(raw: list[dict]) -> list[QAInstance]:
             haystack_dates=e.get("haystack_dates", []),
             haystack_sessions=e.get("haystack_sessions", []),
             answer_session_ids=e.get("answer_session_ids", []),
+            answer_turn_ids=_gold_turn_ids(e),
         )
         for e in raw
     ]

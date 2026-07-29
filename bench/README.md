@@ -47,7 +47,7 @@ Reproducible LongMemEval evaluation for Cortex. **Phase 0 verified facts below a
 ## Harness design (Phase 1.2 — next)
 - `MemorySystem` ABC: `ingest(history) -> None`, `answer(question, question_date) -> str`. Baselines + Cortex + competitors all implement it.
 - Pipeline: load `_S` → per question: `ingest(haystack_sessions)` → `answer(...)` → write hypothesis JSONL → judge (Gemini for iteration; `gpt-4o-2024-08-06` for headline, validated for correlation) → metrics.
-- **Metrics report:** accuracy overall + per type + **abstention bucket**; **mean context tokens/query, $/question (ingest extract + read + judge), p50/p95 latency, tokens-per-correct-answer**; plus **retrieval recall@k** from `answer_session_ids`/`has_answer`.
+- **Metrics report:** accuracy overall + per type + **abstention bucket**; **mean context tokens/query, $/question (ingest extract + read + judge), p50/p95 latency, tokens-per-correct-answer**; plus two retrieval metrics at two different granularities — **recall@k** from `answer_session_ids` (session granularity) and **coverage@k** from LongMemEval's per-turn `has_answer` / LoCoMo's `dia_id` (turn granularity). See "Reader-independent metrics" below.
 - **Judge code:** reuse the official prompt templates (verbatim, recorded above). Before vendoring `evaluate_qa.py` into this Apache-2.0 repo, check the upstream LICENSE for compatibility (Phase 1.2 TODO); otherwise reimplement the templates (which are factual prompts) with attribution.
 - **Baselines (Phase 1.3/1.4):** full-context (GPT-4o + a Gemini reader), naive-RAG, **Mem0-OSS** (settle the 49%-vs-93.4% contradiction), Zep-OSS/Graphiti.
 
@@ -72,6 +72,100 @@ All four Phase-0 unknowns resolved from primary sources (counts verified by dire
   Categories map to `locomo-*` question types; adversarial → abstention. See `cortex_bench/locomo.py`.
 
 Per-role models are env-configurable (`CORTEX_READER_MODEL`, `CORTEX_JUDGE_MODEL`, …; see `../.env.example`).
+
+## Reader-independent metrics (coverage@k + MUR)
+
+Accuracy conflates two things: how good the **memory** is at putting the right evidence in
+front of the reader, and how good the **reader** is at using it. These two metrics separate
+them, and neither one asks an LLM anything about quality.
+
+### coverage@k — turn-level evidence coverage (fully deterministic)
+
+`recall@k` is SESSION-level: "did we surface the right *conversation*". A system that drags
+in a whole 40-turn session because one of its turns is gold scores 1.0. That is why the
+shipped **0.998 recall@k is not evidence of good memory**.
+
+`coverage@k` is TURN-level: "did we surface the right *memory*" — the fraction of the gold
+evidence **turns** contained in the memories the reader actually saw. The gap between the two
+is the interesting number: high recall with low coverage means the retriever is finding the
+right haystack and handing the reader the wrong needle.
+
+- **Turn identity** is a string `"{session_id}#{position}"`, `position` **0-based** into
+  `haystack_sessions[i]`. Defined once, in `cortex_bench/turns.py`, and used by every dataset
+  adapter and every system.
+- **LongMemEval gold turns** come from the per-turn `has_answer: true` flag (previously read
+  by zero lines of this harness). A release without it yields no turn gold, and coverage
+  reports `null` rather than a fabricated `0.0`.
+- **LoCoMo gold turns** are resolved from `qa[].evidence` (`"D1:3"`). The primary path is
+  **exact `dia_id` string equality** — real LoCoMo turns carry a `dia_id` byte-identical to
+  the evidence string, so no off-by-one is possible. Only turns lacking `dia_id` fall back to
+  positional resolution via `LOCOMO_EVIDENCE_TURN_BASE = 1` (evidence turn numbers are
+  1-indexed; the 0-based position is `m - 1`). That value is **documented inference** — from
+  the committed fixture in `tests/test_locomo.py` and the upstream snap-research/locomo
+  schema — not observation, since `locomo10.json` is gitignored. A fallback id that lands out
+  of range is **dropped and warned about**, so a wrong convention reads as a loud zero rather
+  than a plausible number.
+- **`--fact-keys` raises recall@k without raising coverage@k.** Distilled fact chunks carry
+  session provenance but no turn provenance, so they contribute zero coverage. That asymmetry
+  is the pair of metrics working as intended, not a bug.
+- **Non-retrieval systems report `null`, not `0.0`.** full-context covers every turn by
+  construction, so it declines to enumerate them; the report explains the absence in
+  `coverage_at_k_note` instead.
+- **coverage@k is a LIVE-RUN metric.** Turn ids are not persisted into `*_hypotheses.jsonl`
+  (resumed records are excluded from it anyway), so **the two committed headline runs
+  (0.932 / 0.813) predate coverage@k and carry no coverage number.**
+
+### MUR — Memory Utility Ratio
+
+```
+MUR = accuracy(system-retrieved context) / accuracy(gold-evidence context)
+```
+
+with the **same reader and the same judge on both sides**, so reader capability and judge
+leniency cancel to first order. `MUR = 1.0` means retrieval cost the reader nothing;
+`MUR = 0.6` means the memory layer threw away 40% of the accuracy the reader could have had.
+The denominator is a run over LongMemEval's `oracle` variant (already supported by
+`--variant oracle`).
+
+MUR is computed **post hoc** by pairing two committed `*_hypotheses.jsonl` files per
+`question_id` — it never runs a reader or a judge, and it costs nothing to recompute:
+
+```
+python -m cortex_bench.mur \
+  --system bench/results/cortex-v0_s_hypotheses.jsonl \
+  --oracle bench/results/cortex-v0_oracle_hypotheses.jsonl \
+  --system-results bench/results/cortex-v0_s_results.json \
+  --oracle-results bench/results/cortex-v0_oracle_results.json \
+  --by-type --variant s --out bench/results/mur_s
+```
+
+It pairs the hypotheses rather than dividing the two `accuracy` scalars in `*_results.json`,
+because those are rounded over whatever `--limit/--seed/--shuffle` subset each run used —
+dividing them silently compares two different populations. Pairing gives an exact ratio over
+one common population plus per-type MUR, a paired exact McNemar test, and a paired bootstrap
+CI. The `*_results.json` files are an optional second input: `aggregate()` now stamps a `run`
+block (system, benchmark, variant, reader, judge, tier, top_k, seed), and MUR checks two
+preconditions against it.
+
+- **Same reader, judge and benchmark on both sides** — otherwise they do not cancel. Refused
+  unless `--allow-provenance-mismatch`. `system` is deliberately *not* compared: the
+  gold-evidence denominator is normally served by `full-context` while the numerator is the
+  retrieval system under test.
+- **The denominator really is the gold-evidence run** (`run.variant == "oracle"`). Without
+  this, two ordinary retrieval runs pair into a green-checked number that is a ratio of two
+  retrievers, not MUR. Refused unless `--allow-non-oracle-denominator`, which records
+  `denominator_is_oracle: false` and prints a warning.
+
+Runs committed before that stamp existed report `provenance_checked: false` — the
+preconditions are recorded as *unchecked*, never assumed. `--min-overlap` (default 0.9)
+separately refuses to pair two runs that share too few `question_id`s; it measures the
+overlap over the same population the ratio uses, so excluding abstention questions from the
+ratio also excludes them from the overlap (a run paired with itself is always 1.0, whatever
+its `_abs` share).
+
+LoCoMo has no oracle variant, so MUR ships LongMemEval-first; the CLI pairs on `question_id`
+only, so a future gold-evidence-context LoCoMo system needs no code change — just
+`--allow-non-oracle-denominator`, since such a run cannot carry the `oracle` variant tag.
 
 ## Current results
 - **LongMemEval_S headline + methodology:** [`results/PHASE3_authoritative.md`](results/PHASE3_authoritative.md) — **0.932** (gemini-3.5-flash + top_k=50 + preference-mode + the A1 fix `--answer-first --max-output-tokens 8192`, ~$0.0396/q; Gemini judge). Backing artifact: [`results/a1_af8k_full500/cortex-v0_s_results.json`](results/a1_af8k_full500/cortex-v0_s_results.json).

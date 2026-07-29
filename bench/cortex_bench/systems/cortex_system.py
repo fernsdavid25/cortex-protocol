@@ -43,7 +43,8 @@ from cortex.retrieve.hybrid import hybrid_retrieve
 from cortex.store.memory_store import InMemoryStore, MemoryChunk
 
 from ..memory_system import MemorySystem, QAInstance, Usage
-from ._common import rounds
+from ..turns import turn_ids_for
+from ._common import rounds_with_spans
 
 # Cap facts per session so the extra key chunks stay cheap and on-topic.
 MAX_FACTS_PER_SESSION = 6
@@ -145,16 +146,19 @@ class CortexSystem(MemorySystem):
         texts: list[str] = []
         sids: list[str] = []
         dates: list[str] = []
+        # Fourth parallel list: which turns each round chunk contains, for coverage@k.
+        turn_id_lists: list[tuple[str, ...]] = []
         for sid, date, session in zip(
             instance.haystack_session_ids,
             instance.haystack_dates,
             instance.haystack_sessions,
             strict=False,
         ):
-            for chunk_text in rounds(session):
+            for chunk_text, positions in rounds_with_spans(session):
                 texts.append(chunk_text)
                 sids.append(sid)
                 dates.append(date)
+                turn_id_lists.append(turn_ids_for(sid, positions))
         if not texts:
             return Usage()
 
@@ -162,8 +166,10 @@ class CortexSystem(MemorySystem):
         res = self.provider.embed(texts)  # ONE batched embed call for all rounds
         usage.embed_tokens += res.input_tokens
         chunks = [
-            MemoryChunk(text=t, session_id=s, date=d, embedding=vec)
-            for t, s, d, vec in zip(texts, sids, dates, res.vectors, strict=False)
+            MemoryChunk(text=t, session_id=s, date=d, embedding=vec, turn_ids=tids)
+            for t, s, d, vec, tids in zip(
+                texts, sids, dates, res.vectors, turn_id_lists, strict=False
+            )
         ]
         self.store.add(chunks)
 
@@ -178,6 +184,12 @@ class CortexSystem(MemorySystem):
         One generate() call per session extracts the facts; the facts are embedded
         (counted into ``embed_tokens``) and stored as additional MemoryChunks carrying
         that session_id, giving retrieval extra fact-based keys alongside raw rounds.
+
+        Fact chunks keep ``MemoryChunk.turn_ids``' empty default: a distilled fact has SESSION
+        provenance but no TURN provenance. So ``--fact-keys`` can raise recall@k without
+        raising coverage@k. That asymmetry is the pair of metrics working as intended (we
+        surfaced the right conversation via a paraphrase, not the evidence turn itself), not
+        a bug to paper over by attributing the whole session's turns to the fact.
         """
         usage = Usage()
         fact_texts: list[str] = []
@@ -387,4 +399,19 @@ class CortexSystem(MemorySystem):
             if chunk.session_id not in seen:
                 seen.add(chunk.session_id)
                 ordered.append(chunk.session_id)
+        return ordered
+
+    def retrieved_turn_ids(self) -> list[str] | None:
+        """Turns covered by the retrieved memories (coverage@k), deduped, retrieval order.
+
+        Reads ``_last_retrieved``, which is assigned after rerank and BEFORE the synthetic
+        distilled-facts / reflection chunks are prepended, so those never pollute the metric.
+        """
+        seen: set[str] = set()
+        ordered: list[str] = []
+        for chunk in self._last_retrieved:
+            for tid in chunk.turn_ids:
+                if tid not in seen:
+                    seen.add(tid)
+                    ordered.append(tid)
         return ordered

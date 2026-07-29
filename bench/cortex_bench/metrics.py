@@ -1,7 +1,19 @@
-"""Scoring + the cost/accuracy diagnostic columns ($/question, recall@k, abstention).
+"""Scoring + the cost/accuracy diagnostic columns ($/question, recall@k, coverage@k, abstention).
 
 Reports what competitors hide: per-type accuracy, a distinct abstention bucket,
 mean context tokens/query, $/question, latency p50/p95, and retrieval recall@k.
+
+Two retrieval metrics, deliberately not one
+-------------------------------------------
+``recall@k`` is SESSION-level: it asks "did we surface the right CONVERSATION". A system that
+drags in a whole 40-turn session because one turn is gold scores 1.0 on it. That is why the
+shipped 0.998 recall@k is not evidence of good memory.
+
+``coverage@k`` is TURN-level: "did we surface the right MEMORY". It is fully deterministic —
+no LLM, no judge — and it is computed against gold evidence TURNS (LongMemEval's per-turn
+``has_answer``, LoCoMo's ``dia_id``-resolved evidence). Both metrics are reported side by
+side, because their GAP is the interesting number: high recall with low coverage means the
+retriever is finding the right haystack and handing the reader the wrong needle.
 """
 
 from __future__ import annotations
@@ -48,6 +60,11 @@ class Record:
     # False for resumed records: the hypothesis was re-graded from disk (so it counts toward
     # accuracy) but carries no live usage/retrieval, so it is excluded from cost/latency/recall.
     measured: bool = True
+    # Turn ids covered by the retrieved memories (coverage@k). ``None`` = the system does not
+    # report turn provenance -> the record is EXCLUDED from coverage, not scored 0.0. Appended
+    # after ``measured`` so every existing positional Record(...) construction still binds the
+    # same fields.
+    retrieved_turn_ids: list[str] | None = None
 
 
 def _mean(xs: Sequence[float]) -> float:
@@ -69,11 +86,27 @@ def _recall(retrieved: list[str], gold: list[str]) -> float | None:
     return len(g & set(retrieved)) / len(g)
 
 
+def _coverage(retrieved: list[str] | None, gold: list[str]) -> float | None:
+    """Fraction of the gold EVIDENCE TURNS contained in the retrieved memories.
+
+    Returns ``None`` (excluded from the metric, NOT 0.0) when the instance carries no
+    turn-level gold or the system does not report turn provenance — a fabricated zero would
+    silently deflate the mean and make an unmeasurable run look like a bad one.
+
+    A chunk covers every turn in its span, because the reader literally sees that turn's text.
+    """
+    if retrieved is None or not gold:
+        return None
+    g = set(gold)
+    return len(g & set(retrieved)) / len(g)
+
+
 def aggregate(
     records: list[Record],
     reader_model: str | None = None,
     embed_model: str | None = None,
     system_name: str | None = None,
+    run_meta: dict | None = None,
 ) -> dict:
     total = len(records)
 
@@ -97,6 +130,16 @@ def aggregate(
         if r.measured
         and (x := _recall(r.retrieved_session_ids, r.instance.answer_session_ids)) is not None
     ]
+    # coverage@k rides the SAME three gates as recall@k (non-abstention, measured, gold
+    # present) so the two are directly comparable; only its third gate is turn gold instead of
+    # session gold, which is why its denominator can legitimately differ (coverage_at_k_n).
+    coverages = [
+        x
+        for r in nonabst
+        if r.measured
+        and (x := _coverage(r.retrieved_turn_ids, r.instance.answer_turn_ids)) is not None
+    ]
+    has_turn_gold = any(r.instance.answer_turn_ids for r in nonabst)
     in_toks = [r.usage.input_tokens for r in measured]
     out_toks = [r.usage.output_tokens for r in measured]
     embed_toks = [r.usage.embed_tokens for r in measured]
@@ -114,7 +157,31 @@ def aggregate(
         "latency_ms_p50": round(_pct(lat, 50), 1),
         "latency_ms_p95": round(_pct(lat, 95), 1),
         "recall_at_k": round(_mean(recalls), 4) if recalls else None,
+        # Always present, mirroring recall_at_k, so a consumer can tell "coverage was not
+        # computed" (null) from "coverage was 0.0" without probing for an optional key.
+        "coverage_at_k": round(_mean(coverages), 4) if coverages else None,
     }
+    # Coverage's denominator legitimately differs from recall's (turn gold != session gold, and
+    # not every system reports turns), so it must be visible whenever a number is reported.
+    if report["coverage_at_k"] is not None:
+        report["coverage_at_k_n"] = len(coverages)
+    # Explain a missing/trivial coverage@k, mirroring recall_at_k_note. Only when there was at
+    # least one eligible record, so aggregate([]) keeps its exact legacy shape.
+    if nonabst:
+        if report["coverage_at_k"] is None and not has_turn_gold:
+            report["coverage_at_k_note"] = (
+                "unavailable: this dataset/run carries no turn-level gold evidence"
+            )
+        elif report["coverage_at_k"] is None:
+            who = system_name or "this system"
+            report["coverage_at_k_note"] = (
+                f"unavailable: {who} does not report turn-level retrieval provenance"
+            )
+        elif system_name is not None and system_name not in RETRIEVAL_SYSTEMS:
+            report["coverage_at_k_note"] = (
+                f"trivial: {system_name} does not retrieve a subset (reads full context); "
+                "coverage@k is not a retrieval-quality metric here"
+            )
     # Only surface measured_n on a resumed run, so ordinary runs keep an unchanged report shape.
     if mtotal != total:
         report["measured_n"] = mtotal
@@ -150,4 +217,10 @@ def aggregate(
                 sum(embed_toks) * embed_in + sum(in_toks) * pin + sum(out_toks) * pout
             ) / 1e6
             report["usd_per_question"] = round(total_cost / mtotal, 6)
+    # Stamp the run's identity (reader, judge, benchmark, levers) so MUR's "same reader + same
+    # judge on both sides" precondition is CHECKABLE from the committed artifacts instead of
+    # taken on trust. Gated exactly like price_source, so callers that pass nothing (every
+    # existing unit test) keep the legacy report shape byte for byte.
+    if run_meta:
+        report["run"] = dict(sorted(run_meta.items()))
     return report

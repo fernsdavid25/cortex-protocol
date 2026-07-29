@@ -57,6 +57,32 @@ def test_lexical_search_surfaces_exact_keyword_dense_ranks_lower():
     assert all(c.text != noise_text for c in store.lexical_search("Rex", 2))
 
 
+def test_memory_chunk_turn_ids_defaults_empty_and_does_not_affect_ranking():
+    """The bench's turn provenance is an optional, immutable-defaulted field: every existing
+    construction site keeps working, and it participates in NO scoring — a store built with
+    turn_ids ranks identically to one built without."""
+    assert MemoryChunk(text="t", session_id="s", date="d").turn_ids == ()
+    assert MemoryChunk(text="t", session_id="s", date="d", turn_ids=("s#0",)).turn_ids == ("s#0",)
+
+    texts = [("the cat sat on the mat", "s1"), ("a unique pangolin appeared", "s2")]
+    vecs = [[1.0, 0.0], [0.0, 1.0]]
+    plain = InMemoryStore()
+    plain.add([_chunk(t, s, v) for (t, s), v in zip(texts, vecs, strict=True)])
+    tagged = InMemoryStore()
+    tagged.add(
+        [
+            MemoryChunk(text=t, session_id=s, date="2026-01-01", embedding=v, turn_ids=(f"{s}#0",))
+            for (t, s), v in zip(texts, vecs, strict=True)
+        ]
+    )
+    assert [c.session_id for c in plain.dense_search([1.0, 0.0], 2)] == [
+        c.session_id for c in tagged.dense_search([1.0, 0.0], 2)
+    ]
+    assert [c.session_id for c in plain.lexical_search("pangolin cat", 2)] == [
+        c.session_id for c in tagged.lexical_search("pangolin cat", 2)
+    ]
+
+
 def test_lexical_search_bm25_prefers_rarer_term():
     store = InMemoryStore()
     store.add(

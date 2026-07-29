@@ -39,6 +39,13 @@ class MemoryChunk:
     session_id: str
     date: str
     embedding: list[float] = field(default_factory=list)
+    turn_ids: tuple[str, ...] = ()
+    """Which conversational turns this chunk's text contains, for the bench's turn-level
+    coverage@k (see ``bench/cortex_bench/turns.py``). Empty for chunks with no turn
+    provenance — LLM-distilled fact keys, reflection digests, sqlite-backed memories — which
+    therefore correctly contribute zero coverage. Immutable default, so no
+    ``field(default_factory=...)`` is needed and every existing keyword construction site is
+    unaffected; nothing here participates in retrieval scoring or in the reader prompt."""
 
 
 class InMemoryStore:

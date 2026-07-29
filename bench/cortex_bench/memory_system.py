@@ -47,6 +47,11 @@ class QAInstance:
     haystack_dates: list[str] = field(default_factory=list)
     haystack_sessions: list[list[dict]] = field(default_factory=list)
     answer_session_ids: list[str] = field(default_factory=list)
+    # Turn-level gold evidence for coverage@k (``turns.turn_id`` strings). Appended LAST on
+    # purpose: run.py and several tests construct QAInstance positionally, so inserting this
+    # anywhere earlier would silently rebind an existing argument. Empty = this dataset/run
+    # carries no turn-level gold, which makes coverage@k report None rather than a fake 0.0.
+    answer_turn_ids: list[str] = field(default_factory=list)
 
     @property
     def is_abstention(self) -> bool:
@@ -76,3 +81,14 @@ class MemorySystem(ABC):
     def retrieved_session_ids(self) -> list[str]:
         """Session ids used to answer the most recent question (for recall@k). Optional."""
         return []
+
+    def retrieved_turn_ids(self) -> list[str] | None:
+        """Turn ids covered by the memories used for the most recent answer (coverage@k).
+
+        ``None`` means "this system does not report turn-level provenance", which is
+        DIFFERENT from ``[]`` ("it retrieved, and covered no gold turn"): ``None`` excludes
+        the record from the metric entirely instead of scoring it 0.0 and quietly dragging
+        the mean down. Concrete-with-a-default (never abstract) so the stub systems and the
+        test-local subclasses that implement only ``ingest``/``answer`` keep working.
+        """
+        return None

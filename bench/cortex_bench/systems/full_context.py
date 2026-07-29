@@ -37,3 +37,10 @@ class FullContextSystem(MemorySystem):
 
     def retrieved_session_ids(self) -> list[str]:
         return list(self._instance.haystack_session_ids) if self._instance else []
+
+    def retrieved_turn_ids(self) -> list[str] | None:
+        # Deliberately None, not the full turn list. Full-context covers every turn, so an
+        # enumerated list would be 1.0 by construction AND would hold ~500 sessions x tens of
+        # turns of ids alive on each of ~500 in-memory Records. metrics.py reports the absence
+        # (coverage_at_k_note) rather than a number that means nothing.
+        return None
