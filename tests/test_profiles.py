@@ -4,7 +4,7 @@ MOAT-CRITICAL: these tests pin the cheap tier so a future edit cannot silently d
 server or the bench harness away from today's LongMemEval_S 0.932 / LoCoMo 0.813 numbers.
 """
 
-from cortex.profiles import CHEAP, FLAGSHIP, TIER_PROFILES, resolve_tier
+from cortex_bench.profiles import CHEAP, FLAGSHIP, TIER_PROFILES, resolve_tier
 
 
 def test_default_resolves_to_cheap_with_frozen_values():

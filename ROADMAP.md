@@ -1,5 +1,7 @@
 # Cortex Roadmap — one core, scaled to a lifelong memory
 
+*Last reviewed 2026-07-28, against `v0.2.0`.*
+
 Cortex aims to be the **default memory layer for AI agents**: one memory a user owns, that any
 agent reads with consent, that still recalls what you said *years* later and across devices. This is
 **one combined core, improved only by what benchmarks prove** — not a pile of specialized memory

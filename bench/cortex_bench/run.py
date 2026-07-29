@@ -11,13 +11,13 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from cortex.profiles import LOCOMO_DELTA, TIER_PROFILES, resolve_tier
 from cortex.providers.base import LLMProvider
 
 from .dataset import download, load_instances
 from .judge import Judge
 from .memory_system import MemorySystem, QAInstance
 from .metrics import Record, aggregate
+from .profiles import LOCOMO_DELTA, TIER_PROFILES, resolve_tier
 from .systems.cortex_system import CortexSystem
 from .systems.full_context import FullContextSystem
 from .systems.naive_rag import NaiveRAGSystem
@@ -260,6 +260,9 @@ def run(
                 usage = u_ingest + u_answer
                 usage.latency_ms = max(usage.latency_ms, elapsed_ms)
                 retrieved = system.retrieved_session_ids()
+                # Inside the same guard: a system that raises here must still be a RECORDED
+                # failure, not a crash of the whole run.
+                turn_ids = system.retrieved_turn_ids()
             except Exception as exc:  # noqa: BLE001 — keep the run alive past any one instance
                 print(f"WARN: instance {inst.question_id} failed, recording as wrong: {exc}")
                 records.append(Record(inst, "", False))
@@ -268,7 +271,12 @@ def run(
             # Judge OUTSIDE the system guard: a judge failure aborts cleanly (file intact)
             # instead of fabricating a wrong verdict over a good answer.
             correct = judge.grade(inst, hyp)
-            records.append(Record(inst, hyp, correct, usage, retrieved))
+            records.append(
+                Record(inst, hyp, correct, usage, retrieved, retrieved_turn_ids=turn_ids)
+            )
+            # Turn ids are NOT persisted: ~200 per row would bloat the artifact, and a resumed
+            # record is excluded from coverage@k by the `measured` gate anyway, so a persisted
+            # list could never be used. coverage@k is a live-run metric by design.
             _persist(inst.question_id, hyp, correct)
     finally:
         if fh is not None:
@@ -539,6 +547,22 @@ def main(argv: list[str] | None = None) -> dict:
         reader_model=resolved["reader_model"],
         embed_model=embed_model,
         system_name=system.name,
+        # STATIC values only — no timestamp, no git shell-out — so results.json stays byte-
+        # reproducible for the same command. This is what lets `cortex_bench.mur` verify that
+        # its numerator and denominator runs really did share a reader and a judge.
+        run_meta={
+            "system": system.name,
+            "benchmark": "locomo" if args.locomo else "longmemeval",
+            "variant": None if args.locomo else args.variant,
+            "tier": resolved["tier"],
+            "reader_model": resolved["reader_model"],
+            "embed_model": embed_model,
+            "judge_backend": judge.backend,
+            "judge_model": judge.model,
+            "top_k": resolved["top_k"],
+            "limit": args.limit,
+            "seed": args.seed,
+        },
     )
 
     (outdir / f"{tag}_results.json").write_text(json.dumps(report, indent=2), encoding="utf-8")

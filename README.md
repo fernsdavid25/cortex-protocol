@@ -24,75 +24,67 @@ own embedding tokens.
 <sub>† Per-question cost is computed from measured token counts at Google's **confirmed list
 prices** (paid tier) for the reader model.</sub>
 
-## Architecture
+## Quickstart — self-host (local memory in your agent)
 
-Two hot paths — `memorize` embeds once and persists; `recall` embeds once and runs a pure hybrid
-retrieval with **no server-side generation**. Three enrichment layers bolt on at **write time only**,
-so recall stays byte-identical whether they are on or off (grounded in
-[`docs/ARCHITECTURE.md`](https://github.com/fernsdavid25/cortex-protocol/blob/main/docs/ARCHITECTURE.md)).
+The local server (`cortex-mcp`) is a **stdio MCP server**: your own Gemini key (BYOK), memories in a
+local SQLite file (`~/.cortex/memory.db`), **nothing phones home**.
 
-```mermaid
-flowchart TB
-    classDef write fill:#1e3a5f,stroke:#3b82f6,stroke-width:1px,color:#e8f0fe
-    classDef read fill:#1a3d2e,stroke:#22c55e,stroke-width:1px,color:#e6f7ee
-    classDef store fill:#2d2a3e,stroke:#a78bfa,stroke-width:1px,color:#f0ecff
-    classDef optin fill:#3d3320,stroke:#f59e0b,stroke-width:1px,stroke-dasharray:4 3,color:#fef3c7
-    classDef agent fill:#111,stroke:#666,stroke-width:1px,color:#eee
+1. **Get a Gemini key** (free): <https://aistudio.google.com/apikey>
+2. **Add Cortex to your MCP client.** Every client uses the same `mcpServers` shape — only the file
+   differs:
 
-    W0["<b>memorize(content)</b>"]:::write
-    W1["embed once · your key"]:::write
-    W2["persist row + vector"]:::write
-    WX["<b>opt-in</b> · 1 flash-lite call<br/>episodic · entity graph · dedup"]:::optin
-
-    DB[("SQLite<br/><code>~/.cortex/memory.db</code>")]:::store
-
-    R0["<b>recall(query)</b>"]:::read
-    R1["embed once · your key"]:::read
-    R2["hybrid retrieve<br/>dense + BM25 → RRF"]:::read
-    R3["ranked raw memories"]:::read
-    AG["<b>your agent</b> does the reasoning"]:::agent
-
-    W0 --> W1 --> W2 --> DB
-    W2 -.->|"write time only"| WX
-    R0 --> R1 --> R2 --> R3 ==> AG
-    DB --> R2
-
-    linkStyle 0,1,2 stroke:#3b82f6
-    linkStyle 4,5,6,7 stroke:#22c55e
+```json
+{
+  "mcpServers": {
+    "cortex": {
+      "command": "uvx",
+      "args": ["--from", "cortex-protocol", "cortex-mcp"],
+      "env": { "GEMINI_API_KEY": "your-key-here" }
+    }
+  }
+}
 ```
 
-**The invariant:** every enrichment layer runs at **write** time. Turning them on changes what is
-*stored*, never what `recall` *does* — so the published per-recall cost holds no matter how many
-layers you enable. `recall` is one embedding call plus local search, and returns raw memories.
-**No LLM ever runs on the read path.**
+| Client | Config file |
+|---|---|
+| **Claude Code** | `~/.claude.json` (global), or `.mcp.json` in a project |
+| **Cursor** | `~/.cursor/mcp.json` (global), or `.cursor/mcp.json` in a project |
+| **Claude Desktop** | `claude_desktop_config.json` (Settings → Developer → Edit Config) |
+| **VS Code** | `.vscode/mcp.json` |
 
-### Inside `hybrid_retrieve`
+Restart the client. That exposes six tools (the last two are gated on opt-in memory layers — see
+**Config (env)** below):
 
-Dense and lexical retrieval fail in different ways: embeddings miss rare exact tokens (names, IDs,
-dates), BM25 misses paraphrase. Reciprocal Rank Fusion combines them **without score
-normalization** — each list votes by *rank*, so a memory both retrievers like beats one only a
-single retriever likes ([Cormack et al., 2009](https://dl.acm.org/doi/10.1145/1571941.1572114)).
+| Tool | What it does |
+|---|---|
+| `memorize(content, kind?, tags?)` | Save a durable memory (optionally classified into one of six kinds). |
+| `recall(query, limit?)` | Retrieve the most relevant memories (hybrid dense + BM25, RRF; no LLM generation). |
+| `list_memories(limit?)` | List the most recent memories. |
+| `forget(memory_id)` | Delete a memory (a short id prefix works if unambiguous). |
+| `recall_about(entity, limit?)` | Exhaustive dossier for one entity — a person, place, project, org, thing, or yourself — every relationship plus every memory attached to it. A pure keyed read, no LLM/embedding call. **Requires `CORTEX_GRAPH=1`.** |
+| `recall_timeline(since?, until?, limit?)` | Dated event timeline — memories ordered by their extracted `event_time` (for "what happened when" questions), optionally bounded by ISO dates. A pure keyed read, no LLM/embedding call. **Requires `CORTEX_EPISODIC=1`.** |
 
-```mermaid
-flowchart LR
-    classDef q fill:#111,stroke:#666,color:#eee
-    classDef ret fill:#1a3d2e,stroke:#22c55e,color:#e6f7ee
-    classDef fuse fill:#2d2a3e,stroke:#a78bfa,color:#f0ecff
-    classDef out fill:#1e3a5f,stroke:#3b82f6,color:#e8f0fe
+**From a checkout** (to run your own working copy instead of the published package):
+`python -m cortex.mcp.server`, or in the client config use
+`"command": "uv", "args": ["run", "--with", "fastmcp", "python", "-m", "cortex.mcp.server"]`.
+Note the `--from cortex-protocol` in the config above — a bare `uvx cortex-mcp` resolves to an
+unrelated package.
 
-    Q["query"]:::q
-    E["embed once"]:::q
-    D["<b>dense</b><br/>cosine over vectors<br/><i>catches paraphrase</i>"]:::ret
-    L["<b>lexical</b><br/>Okapi BM25<br/><i>catches exact tokens</i>"]:::ret
-    F{"<b>RRF</b><br/>k=60<br/>rank-vote fusion"}:::fuse
-    O["top-k memories"]:::out
+**Config (env):** `GEMINI_API_KEY` / `GOOGLE_API_KEY` (required); optional `CORTEX_DB_PATH`,
+`CORTEX_USER_ID`, `CORTEX_EMBED_MODEL`, `CORTEX_EMBED_DIM`, `CORTEX_TOP_K` (default recall depth 5).
 
-    Q --> E --> D
-    Q --> L
-    D -->|"4 × top_k pool"| F
-    L -->|"4 × top_k pool"| F
-    F --> O
-```
+**Opt-in memory layers (off by default).** `CORTEX_GRAPH=1` builds the entity graph and enables
+`recall_about`; `CORTEX_EPISODIC=1` structures event time / actor / location and enables
+`recall_timeline`; `CORTEX_EXTRACT_MODEL` (default `gemini-2.5-flash-lite`) is the model that does
+that extraction. Enabling either adds **one cheap flash-lite call per `memorize`** (write-time only,
+on your own key — when both are on they share a single extraction call). **`recall` stays
+byte-identical**, so the published recall cost is unchanged. See
+[`examples/`](https://github.com/fernsdavid25/cortex-protocol/tree/main/examples) and
+[`.env.example`](https://github.com/fernsdavid25/cortex-protocol/blob/main/.env.example).
+
+**Claude Desktop one-click:** build the `.mcpb` bundle and drag it onto Desktop — it prompts for your
+Gemini key and runs the same six tools. See
+[`packaging/mcpb/`](https://github.com/fernsdavid25/cortex-protocol/tree/main/packaging/mcpb).
 
 ## Why Cortex
 
@@ -126,12 +118,17 @@ $0.30/$2.50 (see `bench/cortex_bench/metrics.py`).</sub>
 > **‡ Read this recall number the narrow way.** It is **session-level**: it scores a hit when the
 > retrieved set contains the *session* holding the gold evidence. On LongMemEval that is the
 > dataset's own gold granularity, so 0.998 is measured against exactly what the benchmark defines.
-> On LoCoMo the dataset ships **turn-level** evidence (`"D1:3"` = session 1, turn 3) and
-> [`bench/cortex_bench/locomo.py`](https://github.com/fernsdavid25/cortex-protocol/blob/main/bench/cortex_bench/locomo.py)
-> currently keys on the session and discards the turn — so the LoCoMo figure answers the easier
-> question. Measured turn-level full-evidence coverage on LoCoMo is **0.915 at k=100** and
-> **0.639 at k=8**. A turn-level metric is landing in the harness; until it does, treat 0.998 as
-> "we surfaced the right conversation", not "we surfaced the right memory".
+> On LoCoMo the dataset ships **turn-level** evidence (`"D1:3"` = session 1, turn 3), so
+> session-level recall answers the easier question there. Measured turn-level full-evidence
+> coverage on LoCoMo is **0.915 at k=100** and **0.639 at k=8** — read 0.998 as "we surfaced the
+> right conversation", not "we surfaced the right memory".
+>
+> The stricter metric now ships: `coverage_at_k` in
+> [`metrics.py`](https://github.com/fernsdavid25/cortex-protocol/blob/main/bench/cortex_bench/metrics.py)
+> scores retrieval against individual gold **turns**, joined on LoCoMo's own `dia_id`. Four
+> evidence fields in the released corpus pack several ids into one string
+> (`"D22:1 D22:2 D9:10 D9:11"`); matching the raw field keeps only the first and silently shrinks
+> the gold set, so the parser tokenizes first — worth 13 recovered gold turns across the corpus.
 
 #### The reader frontier — buy accuracy with dollars, not with a different memory system
 
@@ -274,67 +271,69 @@ See [`docs/decades-scale.md`](https://github.com/fernsdavid25/cortex-protocol/bl
 for the decades-scale retrieval analysis (self-host SQLite recall is O(n): measured ~95 ms @ 1k
 memories → ~7.7 s p50 @ 50k).
 
-## Quickstart — self-host (local memory in your agent)
+## Architecture
 
-The local server (`cortex-mcp`) is a **stdio MCP server**: your own Gemini key (BYOK), memories in a
-local SQLite file (`~/.cortex/memory.db`), **nothing phones home**.
+Two paths, and the second one never calls an LLM.
 
-1. **Get a Gemini key** (free): <https://aistudio.google.com/apikey>
-2. **Add Cortex to your MCP client.** Every client uses the same `mcpServers` shape — only the file
-   differs:
+```mermaid
+flowchart TB
+    subgraph W["① SAVING &mdash; you tell an agent something worth keeping"]
+        direction LR
+        W1["memorize()"] --> W2["turn the text into<br/>a searchable form"] --> W3["write it down"]
+    end
 
-```json
-{
-  "mcpServers": {
-    "cortex": {
-      "command": "uvx",
-      "args": ["--from", "cortex-protocol", "cortex-mcp"],
-      "env": { "GEMINI_API_KEY": "your-key-here" }
-    }
-  }
-}
+    DB[("YOUR MEMORY<br/><i>one file, and it's yours</i>")]
+
+    subgraph R["② RECALLING &mdash; a different chat, days later &mdash; no AI model runs here"]
+        direction LR
+        R1["recall()"] --> R2["search it two ways:<br/>by meaning, and by exact words"] --> R3["hand back the<br/>memories that matter"]
+    end
+
+    A["YOUR AI reads those memories<br/>and answers you"]
+
+    W3 --> DB --> R2
+    R3 --> A
+
+    classDef step fill:#1b2a3d,stroke:#4b6a8a,color:#e6eefc
+    class W1,W2,W3,R1,R2,R3 step
+    style W fill:#0d1b2a,stroke:#3b82f6,color:#93c5fd
+    style R fill:#0c1f17,stroke:#22c55e,color:#86efac
+    style DB fill:#241f38,stroke:#a78bfa,color:#ddd6fe
+    style A fill:#141414,stroke:#9ca3af,color:#f3f4f6
 ```
 
-| Client | Config file |
-|---|---|
-| **Claude Code** | `~/.claude.json` (global), or `.mcp.json` in a project |
-| **Cursor** | `~/.cursor/mcp.json` (global), or `.cursor/mcp.json` in a project |
-| **Claude Desktop** | `claude_desktop_config.json` (Settings → Developer → Edit Config) |
-| **VS Code** | `.vscode/mcp.json` |
+**The invariant:** every enrichment layer runs at **write** time. Turning them on changes what is
+*stored*, never what `recall` *does* — so the published per-recall cost holds no matter how many
+layers you enable. `recall` is one embedding call plus local search, and returns raw memories.
+**No LLM ever runs on the read path.**
 
-Restart the client. That exposes six tools (the last two are gated on opt-in memory layers — see
-**Config (env)** below):
+### Inside `hybrid_retrieve`
 
-| Tool | What it does |
-|---|---|
-| `memorize(content, kind?, tags?)` | Save a durable memory (optionally classified into one of six kinds). |
-| `recall(query, limit?)` | Retrieve the most relevant memories (hybrid dense + BM25, RRF; no LLM generation). |
-| `list_memories(limit?)` | List the most recent memories. |
-| `forget(memory_id)` | Delete a memory (a short id prefix works if unambiguous). |
-| `recall_about(entity, limit?)` | Exhaustive dossier for one entity — a person, place, project, org, thing, or yourself — every relationship plus every memory attached to it. A pure keyed read, no LLM/embedding call. **Requires `CORTEX_GRAPH=1`.** |
-| `recall_timeline(since?, until?, limit?)` | Dated event timeline — memories ordered by their extracted `event_time` (for "what happened when" questions), optionally bounded by ISO dates. A pure keyed read, no LLM/embedding call. **Requires `CORTEX_EPISODIC=1`.** |
+Dense and lexical retrieval fail in different ways: embeddings miss rare exact tokens (names, IDs,
+dates), BM25 misses paraphrase. Reciprocal Rank Fusion combines them **without score
+normalization** — each list votes by *rank*, so a memory both retrievers like beats one only a
+single retriever likes ([Cormack et al., 2009](https://dl.acm.org/doi/10.1145/1571941.1572114)).
 
-**From a checkout** (to run your own working copy instead of the published package):
-`python -m cortex.mcp.server`, or in the client config use
-`"command": "uv", "args": ["run", "--with", "fastmcp", "python", "-m", "cortex.mcp.server"]`.
-Note the `--from cortex-protocol` in the config above — a bare `uvx cortex-mcp` resolves to an
-unrelated package.
+```mermaid
+flowchart LR
+    classDef q fill:#111,stroke:#666,color:#eee
+    classDef ret fill:#1a3d2e,stroke:#22c55e,color:#e6f7ee
+    classDef fuse fill:#2d2a3e,stroke:#a78bfa,color:#f0ecff
+    classDef out fill:#1e3a5f,stroke:#3b82f6,color:#e8f0fe
 
-**Config (env):** `GEMINI_API_KEY` / `GOOGLE_API_KEY` (required); optional `CORTEX_DB_PATH`,
-`CORTEX_USER_ID`, `CORTEX_EMBED_MODEL`, `CORTEX_EMBED_DIM`, `CORTEX_TOP_K` (default recall depth 5).
+    Q["query"]:::q
+    E["embed once"]:::q
+    D["<b>dense</b><br/>cosine over vectors<br/><i>catches paraphrase</i>"]:::ret
+    L["<b>lexical</b><br/>Okapi BM25<br/><i>catches exact tokens</i>"]:::ret
+    F{"<b>RRF</b><br/>k=60<br/>rank-vote fusion"}:::fuse
+    O["top-k memories"]:::out
 
-**Opt-in memory layers (off by default).** `CORTEX_GRAPH=1` builds the entity graph and enables
-`recall_about`; `CORTEX_EPISODIC=1` structures event time / actor / location and enables
-`recall_timeline`; `CORTEX_EXTRACT_MODEL` (default `gemini-2.5-flash-lite`) is the model that does
-that extraction. Enabling either adds **one cheap flash-lite call per `memorize`** (write-time only,
-on your own key — when both are on they share a single extraction call). **`recall` stays
-byte-identical**, so the published recall cost is unchanged. See
-[`examples/`](https://github.com/fernsdavid25/cortex-protocol/tree/main/examples) and
-[`.env.example`](https://github.com/fernsdavid25/cortex-protocol/blob/main/.env.example).
-
-**Claude Desktop one-click:** build the `.mcpb` bundle and drag it onto Desktop — it prompts for your
-Gemini key and runs the same six tools. See
-[`packaging/mcpb/`](https://github.com/fernsdavid25/cortex-protocol/tree/main/packaging/mcpb).
+    Q --> E --> D
+    Q --> L
+    D -->|"4 × top_k pool"| F
+    L -->|"4 × top_k pool"| F
+    F --> O
+```
 
 ## Teach your agent to use Cortex well
 

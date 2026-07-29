@@ -1,4 +1,4 @@
-"""Single source of truth for CORTEX_TIER profiles (hosted engine + bench reader knobs).
+"""Single source of truth for CORTEX_TIER reader/retrieval profiles used by the harness.
 
 The ``cheap`` tier is the cost-efficient default. Its invariant is **cost per RECALL**, not
 configuration equality with the benchmark: Cortex ships *retrieval*, while the benchmark measures
