@@ -1,28 +1,21 @@
-# Dependabot keeps dependencies and pinned CI actions current.
-# Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates
+# Dependabot runs for ONE thing: the full-SHA action pins in .github/workflows/*.
+#
+# Pinning actions to a SHA is what makes the CI supply chain safe, and it is also what stops
+# them from ever updating on their own — so something has to bump them, and this is it.
+#
+# There is deliberately NO `pip` block. The lint job already runs `pip-audit` over the exported
+# lockfile on every push, which is what actually caught PYSEC-2026-3455/3456/3457 in pyasn1;
+# a weekly PR that bumps Python deps on top of that is a second opinion nobody reads.
+#
+# Monthly, not weekly: three action pins across three workflows do not change often enough to
+# be worth a PR every Monday.
 version: 2
 updates:
-  # Python dependencies (pyproject.toml / uv.lock).
-  - package-ecosystem: pip
-    directory: "/"
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
-    commit-message:
-      prefix: chore
-      include: scope
-    groups:
-      python-dependencies:
-        patterns:
-          - "*"
-
-  # GitHub Actions — bumps the full-SHA pins in .github/workflows/* as new
-  # releases land, so the supply-chain-safe pins stay on current versions.
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 3
     commit-message:
       prefix: ci
       include: scope
