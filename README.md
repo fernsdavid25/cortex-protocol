@@ -210,25 +210,6 @@ category (0.867) is omitted — competitors don't report it. Higher is better.</
 (~0.925, Claude-Opus reader + reranker). Doubling retrieval depth (k=50→100) is what recovers
 multi-hop (+10.6pt) — the LoCoMo frontier is retrieval depth, not reader capability.
 
-### Beyond a benchmark — does memory make an agent *better?*
-
-`bench/agent_uplift/` runs the **same** multi-session tasks three ways and grades them
-deterministically. Each answer depends on a fact stated in an *earlier* session, so an agent with no
-memory of it cannot succeed (9 scenarios, top_k=5, live Gemini):
-
-| Arm | Pass rate | Mean input tokens |
-|---|---|---|
-| **memoryless** (final task only) | **0.00** | 89.8 |
-| full_context (all prior sessions stuffed in) | 1.00 | 168.6 |
-| **cortex** (top-k `recall` only) | **1.00** | 142.6 |
-
-Memory is the difference between **0% and 100%**. Cortex matches full-context accuracy while feeding
-the agent only the *relevant* recalled memories — and unlike full-context, its cost stays **bounded
-by top-k** instead of growing with total history. On the `secret-store` scenario (one fact buried in
-**12** sessions), cortex feeds 5 recalled memories vs full-context's 12 (**125 vs 212 input tokens**,
-a 0.59 ratio); the gap widens with history length. That is the point: memory that holds accuracy at a
-cost that does not blow up over a long relationship.
-
 ### Reproduce
 
 ```bash
@@ -246,8 +227,6 @@ python -m cortex_bench.run --system cortex-v0 --variant s --limit 500 \
 python -m cortex_bench.run --system cortex-v0 --locomo --reader-model gemini-2.5-flash \
   --top-k 100 --answer-first --max-output-tokens 8192 --judge gemini
 
-# agent uplift:
-uv run python bench/agent_uplift/harness.py --provider gemini
 ```
 
 Full methodology + per-type tables:
@@ -279,17 +258,17 @@ Two paths, and the second one never calls an LLM.
 flowchart TB
     subgraph W["① SAVING &mdash; you tell an agent something worth keeping"]
         direction LR
-        W1["memorize()"] --> W2["turn the text into<br/>a searchable form"] --> W3["write it down"]
+        W1["memorize()"] --> W2["turn it into<br/>a searchable form"] --> W3["write it down"]
     end
 
     DB[("YOUR MEMORY<br/><i>one file, and it's yours</i>")]
 
     subgraph R["② RECALLING &mdash; a different chat, days later &mdash; no AI model runs here"]
         direction LR
-        R1["recall()"] --> R2["search it two ways:<br/>by meaning, and by exact words"] --> R3["hand back the<br/>memories that matter"]
+        R1["recall()"] --> R2["search it two ways —<br/>by meaning,<br/>and by exact words"] --> R3["hand back the<br/>memories that matter"]
     end
 
-    A["YOUR AI reads those memories<br/>and answers you"]
+    A["YOUR AI reads them<br/>and answers you"]
 
     W3 --> DB --> R2
     R3 --> A
