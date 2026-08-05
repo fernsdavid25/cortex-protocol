@@ -18,8 +18,9 @@ own embedding tokens.
 
 > **📊 0.932 LongMemEval_S · 0.813 LoCoMo** — the only memory system publishing $/question, and the
 > only one at 0.9+ on LongMemEval_S with a cost-efficient-tier reader: a **Gemini Flash reader** at
-> **~$0.0396/question** on LongMemEval_S and **~$0.0034/question** on LoCoMo.† Raw standing: **#2**
-> on LongMemEval_S (behind Mastra 0.949), **#3** on LoCoMo. Judge disclosure in [Results](#results).
+> **~$0.0396/question** on LongMemEval_S and **~$0.0034/question** on LoCoMo.† On the published
+> tables that is **#3** on LongMemEval_S and **#4** on LoCoMo — but those tables mix readers,
+> judges and question sets, so read [Results](#results) before ranking anything.
 
 <sub>† Per-question cost is computed from measured token counts at Google's **confirmed list
 prices** (paid tier) for the reader model.</sub>
@@ -100,15 +101,17 @@ Gemini key and runs the same six tools. See
 ## Results
 
 **📊 0.932 LongMemEval_S · 0.813 LoCoMo.** Two public long-term-memory benchmarks, with the
-standing stated plainly: raw **#2** on LongMemEval_S (behind Mastra 0.949) and raw **#3** on
-LoCoMo. What is distinct is the cost side — Cortex is the only memory system publishing
-$/question, and the only one at 0.9+ on LongMemEval_S with a cost-efficient-tier reader. No
-competitor's $/question has been measured, by us or by them, so no cost comparison is claimed.
+standing stated plainly: **#3** on LongMemEval_S (behind Mastra 0.949 and Mem0 0.944) and **#4** on
+LoCoMo (behind Mem0 0.925, Cognis ~0.925 and EMem 0.84). Those placings are worth less than they
+look: every row is its own system's number under its own reader, judge and question set. What is
+distinct here is the cost side — Cortex is the only memory system publishing $/question, and the
+only one at 0.9+ on LongMemEval_S with a cost-efficient-tier reader. No competitor's $/question has
+been measured, by us or by them, so no cost comparison is claimed.
 
 | Benchmark | Cortex | Raw rank | Reader (cost†) | Recall@k (session-level‡) |
 |---|---|---|---|---|
-| **LongMemEval_S** (500 q) | **0.932** | #2 raw | `gemini-3.5-flash`, top_k=50, preference-mode, answer-first · **~$0.0396/q** | 0.998 |
-| **LoCoMo** (1986 q) | **0.813** | #3 raw | `gemini-2.5-flash`, top_k=100, answer-first · **~$0.0034/q** | 0.998 |
+| **LongMemEval_S** (500 q) | **0.932** | #3 raw | `gemini-3.5-flash`, top_k=50, preference-mode, answer-first · **~$0.0396/q** | 0.998 |
+| **LoCoMo** (1986 q) | **0.813** | #4 raw | `gemini-2.5-flash`, top_k=100, answer-first · **~$0.0034/q** | 0.998 |
 
 <sub>† $/q is computed from measured token counts (25,723.5 in / 113.5 out per question on
 LongMemEval_S; 10,468.4 in / 92.9 out on LoCoMo) at Google's **confirmed list prices** for the
@@ -152,14 +155,15 @@ nothing else changes.
 | **Cortex** (this repo) | **0.932** | `gemini-3.5-flash` (cost-efficient tier) | **~$0.0396** | gemini-flash |
 | Mastra | 0.949 | `gpt-5-mini` (premium) | — | GPT-4o |
 | Zep / Graphiti | 0.712 | `gpt-4o` (premium) | — | GPT-4o |
-| Mem0 | not published¹ | — (graph) | — | — |
+| Mem0 | 0.944¹ | `gpt-5` (premium) | — | gpt-5 (self) |
 
 <sub>Numbers from the verified [leaderboard research](https://github.com/fernsdavid25/cortex-protocol/blob/main/bench/results/leaderboard_research.md).
 **Not apples-to-apples:** competitor scores are self-reported under *their own* judges; Cortex is
 graded by a `gemini-3.5-flash` judge (likely more lenient than the canonical `gpt-4o-2024-08-06`), and
-`~$/q` is only published where Cortex measures it — no competitor `$/q` has been measured. ¹Mem0 has
-no verifiable LongMemEval_S number that survived verification — it reports LoCoMo (0.61–0.66)
-instead. The `~$0.0396` figure is Cortex's own measured token counts priced at Google's confirmed
+`~$/q` is only published where Cortex measures it — no competitor `$/q` has been measured. ¹Mem0's 0.944 is
+its own published figure (mem0.ai/research), measured with a `gpt-5` reader and a `gpt-5` judge at
+top-200 — a stronger reader than Cortex's and a same-model judge on both sides. Not comparable to
+Cortex's 0.932; see the LoCoMo note below. The `~$0.0396` figure is Cortex's own measured token counts priced at Google's confirmed
 `gemini-3.5-flash` list prices.</sub>
 
 > **Judge disclosure (load-bearing).** All Cortex numbers above are graded by an **LLM judge =
@@ -205,10 +209,24 @@ ensemble" columns are excluded as satire; the real *Initial* column is used). Co
 category (0.867) is omitted — competitors don't report it. Higher is better.</sub>
 
 **LoCoMo 0.813** — per category: single-hop 0.864, multi-hop 0.695, temporal 0.857, open-domain
-0.458, adversarial/abstention 0.836. This **beats the graph-memory systems** (Mem0 0.61–0.66, Zep
-0.585–0.62) and is on par with the strong retrieval baseline EMem (0.78–0.84), behind only Cognis
-(~0.925, Claude-Opus reader + reranker). Doubling retrieval depth (k=50→100) is what recovers
-multi-hop (+10.6pt) — the LoCoMo frontier is retrieval depth, not reader capability.
+0.458, adversarial/abstention 0.836. Doubling retrieval depth (k=50→100) is what recovers multi-hop
+(+10.6pt) — the LoCoMo frontier is retrieval depth, not reader capability.
+
+> **Reading LoCoMo numbers across systems (please read before comparing).** Mem0 published
+> **0.669** in [arXiv 2504.19413](https://arxiv.org/abs/2504.19413) (Apr 2025) and reports
+> **0.925** today on [mem0.ai/research](https://mem0.ai/research). Both are theirs and both are
+> real; between them they shipped a v3 algorithm, temporal reasoning, memory decay and entity
+> linking, **and** changed the measurement — reader `gpt-4o-mini` → `gpt-5`, judge unnamed →
+> `gpt-5` self-judged with a partial-credit rubric, retrieval to top-200, and ten runs to one.
+> Their harness also scores LoCoMo categories 1–4, excluding the 446 adversarial questions that
+> Cortex's 0.813 includes (Cortex scores 0.836 on that category). Their own repo puts it well:
+> *"Benchmark scores are not absolute numbers. They depend heavily on… LLM capability."*
+>
+> So **0.813 and 0.925 are not on the same scale**, and no one — us included — can say how much of
+> any gap is memory rather than reader, judge, prompt or depth. That is the whole reason this
+> README publishes its reader, its judge and its cost next to every score. Earlier Zep (0.585–0.62)
+> and EMem (0.78–0.84) figures on this page carry the same caveat: they are each system's own
+> published number under its own harness.
 
 ### Reproduce
 
