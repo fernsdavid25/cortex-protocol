@@ -135,18 +135,30 @@ $0.30/$2.50 (see `bench/cortex_bench/metrics.py`).</sub>
 
 #### The reader frontier — buy accuracy with dollars, not with a different memory system
 
-The same retrieval, the same 500 questions, the same prompt — only the reader model changes. This
-is the trade the memory layer exposes, priced:
+The same retrieval, the same 500 questions — this is the trade the memory layer exposes, priced.
+Two things changed between our cheapest arm and our headline, and they are listed separately
+**on purpose**, because summing them is the exact mistake this table exists to prevent:
 
-| Reader (LongMemEval_S, n=500) | Accuracy | $/question | Cost per **correct** answer |
+| Config (LongMemEval_S, n=500) | Accuracy | $/question | Cost per **correct** answer |
 |---|:--:|:--:|:--:|
-| `gemini-2.5-flash` | 0.848 | **$0.0079** | $0.0093 |
-| `gemini-3.5-flash` | **0.932** | $0.0396 | $0.0425 |
+| `gemini-2.5-flash`, 2k output budget | 0.848 | **$0.0079** | $0.0093 |
+| `gemini-3.5-flash`, 2k output budget | 0.894 | $0.0396 | $0.0443 |
+| `gemini-3.5-flash`, 8k + `--answer-first` | **0.932** | $0.0396 | $0.0425 |
 
-**+8.4 accuracy points for ~5× the reader cost, with the memory system held fixed.** Retrieval is
-byte-identical across the two arms — same index, same top-k, same fused ranking — so the delta is
-reader capability, not retrieval. Pick your point on that curve with `CORTEX_READER_MODEL`;
-nothing else changes.
+**The reader swap is worth +4.6 points and costs ~5×.** Retrieval is byte-identical across those
+two arms — same index, same top-k, same fused ranking, same prompt — so that delta is reader
+capability. It also makes cost-per-correct-answer **4.8× worse**.
+
+**The remaining +3.8 points are free**, and came from something we did not expect to matter:
+emitting the answer *before* its notes and raising the reader's output-token budget from 2,048 to
+8,192, which removed a mid-answer truncation on the aggregation-heavy question types. Same reader,
+same retrieval, same cost — and it *improves* cost-per-correct-answer.
+
+We do not publish a combined "+8.4 from the reader" number, because less than half of it is the
+reader. A leaderboard that reports only accuracy ranks these two changes identically, and reports
+neither the decode budget nor the answer ordering — which is the whole argument for publishing the
+reader, the judge, the depth and the cost next to every score. Pick your point on this curve with
+`CORTEX_READER_MODEL`.
 
 ### How Cortex compares (LongMemEval_S)
 
@@ -236,10 +248,20 @@ python -m cortex_bench.run --system cortex-v0 --variant s --limit 500 \
   --reader-model gemini-3.5-flash --top-k 50 --preference-mode --answer-first \
   --max-output-tokens 8192 --judge gemini --judge-votes 3
 
-# LongMemEval_S — cheap arm of the reader frontier (0.848), same retrieval, cheaper reader:
+# LongMemEval_S — 0.894: the SAME config as the headline, one variable changed (2k output
+# budget, notes-before-answer). The 0.932 - 0.894 gap is that variable, not the reader:
 python -m cortex_bench.run --system cortex-v0 --variant s --limit 500 \
-  --reader-model gemini-2.5-flash --top-k 50 --preference-mode --answer-first \
-  --max-output-tokens 8192 --judge gemini --judge-votes 3
+  --reader-model gemini-3.5-flash --top-k 50 --preference-mode \
+  --max-output-tokens 2048 --judge gemini --judge-votes 3
+
+# LongMemEval_S — 0.848: the cheap arm. Identical to the 0.894 run except the reader, so
+# 0.894 - 0.848 is the reader delta. NOTE the 2k budget: this is the config that was measured.
+python -m cortex_bench.run --system cortex-v0 --variant s --limit 500 \
+  --reader-model gemini-2.5-flash --top-k 50 --preference-mode \
+  --max-output-tokens 2048 --judge gemini --judge-votes 3
+
+# Never measured, and the number we would most like: gemini-2.5-flash WITH --answer-first and an
+# 8k budget. Until someone runs it, no "+8.4 from the reader" claim is available from this repo.
 
 # LoCoMo — 0.813 (put locomo10.json in bench/data/ first):
 python -m cortex_bench.run --system cortex-v0 --locomo --reader-model gemini-2.5-flash \

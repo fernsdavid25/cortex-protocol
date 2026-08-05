@@ -9,9 +9,14 @@
 > **confirmed** `gemini-3.5-flash` list prices, $1.50/$9.00 per 1M in/out (see
 > `cortex_bench/metrics.py`). No competitor $/question has been measured.
 >
-> **Reader frontier** (identical retrieval, both full n=500): `gemini-2.5-flash` → **0.848 @
-> ~$0.0079/q**; `gemini-3.5-flash` → **0.932 @ ~$0.0396/q**. +8.4 accuracy points for ~5× the reader
-> cost, same memory system. Cost per correct answer: $0.0093 vs $0.0425.
+> **Reader frontier** (identical retrieval, all full n=500). Two variables separate the cheap arm
+> from the headline, and they are reported apart because only the first is the reader:
+> `gemini-2.5-flash` **0.848 @ ~$0.0079/q** → `gemini-3.5-flash` **0.894 @ ~$0.0396/q** is the
+> reader swap alone (+4.6 points, ~5× cost, both at a 2k output budget) → `gemini-3.5-flash`
+> **0.932 @ ~$0.0396/q** adds the A1 fix (`--answer-first` + 8k budget) at the same reader for a
+> further +3.8 at no extra cost. Cost per correct answer: $0.0093 → $0.0443 → $0.0425 — the
+> expensive lever made CPCA ~4.8× worse; the free one improved it. **No `gemini-2.5-flash` run with
+> A1 exists, so this repo publishes no controlled "+8.4 from the reader" figure.**
 >
 > **Note on $/q figures below:** dated run entries in this file were priced at the time of the run,
 > when `gemini-3.5-flash` was still priced by estimate. They are kept as-written; every 3.x-reader

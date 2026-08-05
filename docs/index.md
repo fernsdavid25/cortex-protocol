@@ -15,8 +15,10 @@ runtime cost is your own embedding tokens.
     Mastra 0.949), **#3** on LoCoMo.
 
     *The reader frontier:* on the same 500 questions with the same retrieval, a `gemini-2.5-flash`
-    reader scores **0.848 at ~$0.0079/question** and `gemini-3.5-flash` scores **0.932 at
-    ~$0.0396/question** — +8.4 accuracy points for ~5× the reader cost, same memory system.
+    reader scores **0.848 at ~$0.0079/question** and `gemini-3.5-flash` scores **0.894 at
+    ~$0.0396/question** — +4.6 accuracy points for ~5× the reader cost, same memory system. A
+    separate output-budget fix at that same reader adds the remaining +3.8 to reach 0.932,
+    at no extra cost; see the README for why the two are never summed.
 
     *Cost footnote:* per-question cost is computed from measured token counts at Google's
     **confirmed list prices** (paid tier) for the reader model.
