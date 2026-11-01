@@ -23,9 +23,9 @@ jobs:
       id-token: write # REQUIRED: lets the job mint the OIDC token PyPI verifies
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - name: Build sdist + wheel
         run: uv build
       - name: Publish to PyPI (Trusted Publishing, no token)
         # Uploads dist/* via OIDC. SHA-pinned for strict supply-chain parity with ci.yml.
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1 / release-v1
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1 / release-v1
